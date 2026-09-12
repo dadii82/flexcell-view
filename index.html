@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="hr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<title>Flexcell - stanje</title>
+<style>
+:root{--bg:#0f172a;--card:#1e293b;--line:#334155;--txt:#e2e8f0;--dim:#94a3b8;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--idle:#64748b}
+*{box-sizing:border-box}
+body{margin:0;padding:12px 12px 28px;background:var(--bg);color:var(--txt);font:15px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+header{display:flex;align-items:center;gap:8px;margin:2px 2px 12px}
+h1{margin:0;font-size:17px;letter-spacing:.02em;flex:1}
+#age{font-size:12px;color:var(--dim);white-space:nowrap}
+#age.stale{color:var(--bad);font-weight:700}
+.gear{appearance:none;border:1px solid var(--line);background:#0b1220;color:var(--txt);font-size:15px;line-height:1;padding:6px 9px;border-radius:9px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 13px;margin-bottom:10px}
+.top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.mach{font-size:20px;font-weight:800;letter-spacing:.03em}
+.badge{margin-left:auto;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;padding:3px 9px;border-radius:999px;border:1px solid}
+.b-rad{color:#bbf7d0;border-color:#166534;background:#14532d}
+.b-pod{color:#fde68a;border-color:#92400e;background:#78350f}
+.b-pau{color:#fed7aa;border-color:#9a3412;background:#7c2d12}
+.b-stoj{color:#e2e8f0;border-color:#475569;background:#334155}
+.b-prazno{color:#cbd5e1;border-color:#475569;background:#1e293b}
+.prog{font-size:15px;font-weight:700}
+.ip{color:var(--dim);font-size:13px}
+.bar{position:relative;height:22px;border-radius:999px;background:#0b1220;border:1px solid var(--line);overflow:hidden;margin:9px 0 7px}
+.bar i{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:linear-gradient(90deg,#0ea5e9,#22c55e);transition:width .4s ease}
+.bar span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.kv{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:13px;color:var(--dim)}
+.kv b{color:var(--txt);font-weight:700}
+.next{margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);font-size:12px;color:var(--dim)}
+.next b{color:#cbd5e1}
+.sum{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--dim);padding:2px 4px}
+.sum b{color:var(--txt)}
+button{appearance:none;border:1px solid var(--line);background:#0b1220;color:var(--txt);font:600 13px inherit;padding:9px 14px;border-radius:10px}
+button.pri{background:#1d4ed8;border-color:#1d4ed8;color:#fff}
+footer{display:flex;align-items:center;gap:10px;margin-top:14px}
+#err{color:var(--bad);font-size:13px;margin:6px 4px}
+#setup label{display:block;font-size:12px;color:var(--dim);margin:9px 0 3px}
+#setup input{width:100%;padding:10px;border-radius:9px;border:1px solid var(--line);background:#0b1220;color:var(--txt);font:15px inherit}
+#setup .row{display:flex;gap:8px;margin-top:13px}
+#setup .hint{font-size:12px;color:var(--dim);margin-top:11px;line-height:1.45}
+#setup .hint code{color:#cbd5e1}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header><h1>Flexcell - stanje</h1><div id="age">ucitavam...</div><button id="gear" class="gear" title="Postavke">&#9881;</button></header>
+<div id="setup" class="card" hidden>
+  <div style="font-weight:700;margin-bottom:2px">Postavke</div>
+  <label>Privatni repo s podacima (korisnik/repo)</label><input id="cfgRepo" placeholder="korisnik/flexcell-stanje" autocapitalize="off" autocorrect="off" spellcheck="false">
+  <label>Datoteka</label><input id="cfgPath" placeholder="stanje.json" autocapitalize="off" autocorrect="off" spellcheck="false">
+  <label>Branch</label><input id="cfgBranch" placeholder="main" autocapitalize="off" autocorrect="off" spellcheck="false">
+  <label>Token samo za citanje</label><input id="cfgToken" type="password" placeholder="github_pat_..." autocapitalize="off" autocorrect="off" spellcheck="false">
+  <div class="row"><button id="cfgSave" class="pri">Spremi</button><button id="cfgClose">Zatvori</button></div>
+  <div class="hint">Podaci su u <b>privatnom</b> repou, pa ih ova stranica cita preko GitHub API-ja i za to treba token. Na GitHubu: <code>Settings &rarr; Developer settings &rarr; Fine-grained tokens</code>, pristup samo tom repou, pravo <code>Contents: Read-only</code>. Token ostaje spremljen samo na ovom mobitelu.</div>
+</div>
+<div id="cards"></div>
+<div id="sum" class="sum"></div>
+<div id="err"></div>
+<footer><button id="reload">Osvjezi</button><span id="src" style="font-size:11px;color:var(--dim)"></span></footer>
+<script>
+(function(){
+var q=new URLSearchParams(location.search);
+var CFG_KEY='flexcell-status-cfg';
+var cards=document.getElementById('cards'),sumEl=document.getElementById('sum'),ageEl=document.getElementById('age'),errEl=document.getElementById('err'),srcEl=document.getElementById('src'),setupEl=document.getElementById('setup');
+// Postavke se cuvaju samo na ovom mobitelu. Preko ?repo=&path=&branch= se mogu i predati linkom
+// (token se linkom NE predaje).
+function loadCfg(){
+  var c={repo:'',path:'stanje.json',branch:'main',token:''};
+  try{var raw=localStorage.getItem(CFG_KEY);if(raw){var j=JSON.parse(raw);if(j&&typeof j==='object')for(var k in c)if(j[k])c[k]=String(j[k])}}catch(e){}
+  ['repo','path','branch'].forEach(function(k){if(q.get(k))c[k]=String(q.get(k))});
+  return c;
+}
+function saveCfg(c){try{localStorage.setItem(CFG_KEY,JSON.stringify(c))}catch(e){}}
+var cfg=loadCfg();
+var SRC=q.get('src')||'';
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return c==='&'?'&amp;':c==='<'?'&lt;':c==='>'?'&gt;':'&quot;'})}
+function statusClass(s){s=String(s||'');return s==='rad'?'b-rad':s==='podesavanje'?'b-pod':s==='pauza'?'b-pau':s==='stoj'?'b-stoj':'b-prazno'}
+function num(v){return (v===0||v)?v:'-'}
+function slug(v){return String(v||'').trim().replace(/^https?:\/\/github\.com\//i,'').replace(/\.git$/i,'').replace(/^\/+|\/+$/g,'')}
+function render(d){
+  var ms=(d.machines||[]);
+  cards.innerHTML=ms.map(function(m){
+    var pct=Math.max(0,Math.min(100,Number(m.pct)||0));
+    var kv=[];
+    if(m.done!=null&&m.total!=null)kv.push('<span>komada <b>'+num(m.done)+' / '+num(m.total)+'</b></span>');
+    if(m.secPerPart)kv.push('<span>s/kom <b>'+m.secPerPart+'</b></span>');
+    if(m.etaText)kv.push('<span>zavrsetak <b>'+esc(m.etaText)+'</b></span>');
+    if(m.lastPieceText)kv.push('<span>zadnji komad <b>'+esc(m.lastPieceText)+'</b></span>');
+    if(m.counter!=null)kv.push('<span>brojac stroja <b>'+num(m.counter)+'</b></span>');
+    var nx=(m.next||[]).map(function(n){return esc(n.program)+(n.ip?' / '+esc(n.ip):'')+(n.qty?' ('+n.qty+' kom)':'')}).join(' &rarr; ');
+    return '<div class="card">'
+      +'<div class="top"><span class="mach">'+esc(m.machine)+'</span>'
+      +'<span><span class="prog">'+esc(m.program||'-')+'</span> <span class="ip">'+esc(m.ip||'')+'</span></span>'
+      +'<span class="badge '+statusClass(m.status)+'">'+esc(m.status||'prazno')+'</span></div>'
+      +(m.name?'<div class="ip" style="margin:-4px 0 6px">'+esc(m.name)+'</div>':'')
+      +'<div class="bar"><i style="width:'+pct+'%"></i><span>'+pct+' %</span></div>'
+      +'<div class="kv">'+kv.join('')+'</div>'
+      +(nx?'<div class="next">slijedi: <b>'+nx+'</b></div>':'')
+      +'</div>';
+  }).join('')||'<div class="card">Nema podataka o strojevima.</div>';
+  var p=d.plan||{},s=[];
+  if(p.planned!=null)s.push('<span>planirano <b>'+p.planned+'</b></span>');
+  if(p.unplanned!=null)s.push('<span>neplanirano <b>'+p.unplanned+'</b></span>');
+  if(p.csv)s.push('<span>CSV <b>'+esc(p.csv)+'</b>'+(p.csvText?' ('+esc(p.csvText)+')':'')+'</span>');
+  if(d.app)s.push('<span>verzija <b>'+esc(d.app)+'</b></span>');
+  sumEl.innerHTML=s.join('');
+  var at=Date.parse(d.at||'')||0,min=at?Math.round((Date.now()-at)/60000):null;
+  ageEl.textContent=(d.atText||'')+(min!=null?'  ('+(min<1?'sada':min+' min')+')':'');
+  ageEl.className=(min!=null&&min>15)?'stale':'';
+}
+function fail(msg){errEl.textContent=msg}
+// Privatni repo se cita preko contents API-ja (Accept: raw vraca sam sadrzaj datoteke).
+// Ako token nije unesen, stranica pada na obicnu datoteku uz sebe - za javni repo / lokalni server.
+function load(){
+  errEl.textContent='';
+  var repo=slug(cfg.repo),token=String(cfg.token||'').trim();
+  var url,opt={cache:'no-store'};
+  if(repo&&token){
+    url='https://api.github.com/repos/'+repo+'/contents/'+encodeURI(String(cfg.path||'stanje.json').replace(/^\/+/,''))
+       +'?ref='+encodeURIComponent(cfg.branch||'main')+'&t='+Date.now();
+    opt.headers={Authorization:'Bearer '+token,Accept:'application/vnd.github.raw','X-GitHub-Api-Version':'2022-11-28'};
+    srcEl.textContent=repo+'/'+(cfg.path||'stanje.json');
+  }else{
+    var f=SRC||'stanje.json';
+    url=f+(f.indexOf('?')<0?'?':'&')+'t='+Date.now();
+    srcEl.textContent=f;
+  }
+  fetch(url,opt).then(function(r){
+    if(r.status===401||r.status===403)throw new Error('token nije prihvacen (HTTP '+r.status+') - provjeri postavke');
+    if(r.status===404)throw new Error('nema datoteke ili token nema pristup repou (404)');
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    return r.text();
+  }).then(function(t){
+    var d;try{d=JSON.parse(t)}catch(e){throw new Error('neispravan JSON')}
+    render(d);
+  }).catch(function(e){
+    fail('Ne mogu dohvatiti podatke: '+(e&&e.message||e));
+    if(!slug(cfg.repo)||!String(cfg.token||'').trim())openSetup();
+  });
+}
+function openSetup(){
+  document.getElementById('cfgRepo').value=cfg.repo||'';
+  document.getElementById('cfgPath').value=cfg.path||'stanje.json';
+  document.getElementById('cfgBranch').value=cfg.branch||'main';
+  document.getElementById('cfgToken').value=cfg.token||'';
+  setupEl.hidden=false;
+}
+document.getElementById('gear').addEventListener('click',function(){setupEl.hidden?openSetup():setupEl.hidden=true});
+document.getElementById('cfgClose').addEventListener('click',function(){setupEl.hidden=true});
+document.getElementById('cfgSave').addEventListener('click',function(){
+  cfg={
+    repo:slug(document.getElementById('cfgRepo').value),
+    path:String(document.getElementById('cfgPath').value||'stanje.json').trim()||'stanje.json',
+    branch:String(document.getElementById('cfgBranch').value||'main').trim()||'main',
+    token:String(document.getElementById('cfgToken').value||'').trim()
+  };
+  saveCfg(cfg);
+  setupEl.hidden=true;
+  load();
+});
+document.getElementById('reload').addEventListener('click',load);
+document.addEventListener('visibilitychange',function(){if(!document.hidden)load()});
+setInterval(load,30000);
+if(!slug(cfg.repo)&&!SRC)openSetup();
+load();
+})();
+</script>
+</body>
+</html>
