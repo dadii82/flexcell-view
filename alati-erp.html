@@ -1,0 +1,1320 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Werkzeuge → ERP</title>
+<style>
+:root {
+  --bg: #f3f4f6;
+  --panel: #ffffff;
+  --panel-2: #f8f9fb;
+  --line: #e4e7eb;
+  --line-2: #cfd5dc;
+  --text: #1a1e23;
+  --muted: #5f6b78;
+  --faint: #9aa3ad;
+  --ghost: #d9dde2;
+  --accent: #1d5fc4;
+  --accent-soft: #e7effb;
+  --on-accent: #ffffff;
+  --ok: #1b7f47;
+  --ok-soft: #eef8f1;
+  --warn: #a15c00;
+  --hover: #eef2f7;
+  --shadow: 0 10px 30px rgba(20, 30, 45, .14);
+  --mono: "Cascadia Mono", "Cascadia Code", Consolas, "SF Mono", Menlo, monospace;
+  --sans: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #101317;
+    --panel: #171b20;
+    --panel-2: #1c2127;
+    --line: #293038;
+    --line-2: #3a444f;
+    --text: #e5e8ec;
+    --muted: #9aa5b1;
+    --faint: #6d7883;
+    --ghost: #2f363e;
+    --accent: #6da0ff;
+    --accent-soft: #1a2944;
+    --on-accent: #0b1422;
+    --ok: #46bd78;
+    --ok-soft: #14231a;
+    --warn: #e3a643;
+    --hover: #20262d;
+    --shadow: 0 10px 30px rgba(0, 0, 0, .5);
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--text); font: 14px/1.45 var(--sans); -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; }
+code { font-family: var(--mono); }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 20px; }
+
+/* ---------- Kopfzeile ---------- */
+header.top { position: sticky; top: 0; z-index: 20; background: var(--bg); border-bottom: 1px solid var(--line); }
+.titlebar { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; padding-top: 16px; }
+h1 { font-size: 20px; line-height: 1.2; margin: 0; letter-spacing: -.01em; }
+h1 .arrow { color: var(--faint); font-weight: 400; margin: 0 2px; }
+.sub { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+.progress { min-width: 240px; text-align: right; }
+.pnum { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.pnum b { color: var(--text); font-size: 19px; }
+.bar { height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; margin-top: 5px; }
+.bar i { display: block; height: 100%; width: 0; background: var(--ok); border-radius: 99px; transition: width .3s ease; }
+
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding-block: 12px; }
+.search { flex: 1 1 240px; position: relative; min-width: 0; }
+.search svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--faint); pointer-events: none; }
+.search input { width: 100%; height: 36px; padding: 0 12px 0 34px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--panel); color: var(--text); font: inherit; outline: none; }
+.search input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 8px; overflow: hidden; background: var(--panel); }
+.seg button { border: 0; background: none; height: 34px; padding: 0 12px; color: var(--muted); cursor: pointer; white-space: nowrap; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button:hover { background: var(--hover); }
+.seg button.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.seg .n { font-variant-numeric: tabular-nums; opacity: .75; margin-left: 3px; font-weight: 400; }
+.chips { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.chips .lbl { color: var(--muted); font-size: 12.5px; margin-right: 2px; }
+.chip { border: 1px solid var(--line-2); background: var(--panel); border-radius: 99px; height: 28px; padding: 0 10px; font-family: var(--mono); font-size: 12px; color: var(--muted); cursor: pointer; }
+.chip:hover { border-color: var(--accent); color: var(--text); }
+.chip.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.toggle { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; cursor: pointer; user-select: none; white-space: nowrap; }
+.toggle input { accent-color: var(--accent); width: 15px; height: 15px; margin: 0; }
+
+.menu { position: relative; }
+.menu summary { list-style: none; height: 34px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--panel); cursor: pointer; color: var(--muted); user-select: none; }
+.menu summary::-webkit-details-marker { display: none; }
+.menu summary:hover, .menu[open] summary { color: var(--text); border-color: var(--faint); }
+.menu .pop { position: absolute; right: 0; top: calc(100% + 6px); width: 320px; max-width: calc(100vw - 32px); background: var(--panel); border: 1px solid var(--line-2); border-radius: 10px; box-shadow: var(--shadow); padding: 6px; z-index: 30; }
+.pop button, .pop label { display: flex; align-items: flex-start; gap: 8px; width: 100%; text-align: left; border: 0; background: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 13.5px; color: var(--text); }
+.pop button:hover, .pop label:hover { background: var(--hover); }
+.pop .hintline { display: block; font-size: 12px; color: var(--muted); }
+.pop hr { border: 0; border-top: 1px solid var(--line); margin: 5px 4px; }
+.pop .danger { color: #c0392b; }
+.pop input[type=checkbox] { accent-color: var(--accent); margin: 2px 0 0; flex: none; }
+
+.mergebar { background: var(--accent); color: var(--on-accent); }
+.mergebar .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 8px; }
+.mergebar b { font-family: var(--mono); }
+.mergebar button { border: 1px solid currentColor; background: transparent; color: inherit; border-radius: 6px; padding: 3px 10px; cursor: pointer; white-space: nowrap; }
+.mergebar button:hover { background: rgba(127,127,127,.2); }
+
+/* ---------- Liste ---------- */
+main { padding-block: 14px 40px; }
+.help { color: var(--muted); font-size: 12.5px; margin: 0 0 10px; display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.help b { color: var(--text); font-weight: 600; }
+.help svg { vertical-align: -2px; }
+
+.list { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+.list > .item:last-child { border-radius: 0 0 10px 10px; }
+.row, .lhead {
+  display: grid;
+  grid-template-columns: 26px 30px minmax(0, 1fr) minmax(150px, 240px) var(--ms-w, 170px) 50px;
+  column-gap: 10px;
+  align-items: center;
+  padding: 5px 12px;
+}
+.lhead { padding-block: 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--faint); background: var(--panel-2); border-bottom: 1px solid var(--line); border-radius: 10px 10px 0 0; font-weight: 600; }
+.lhead > :nth-child(2) { text-align: right; }
+.item { border-top: 1px solid var(--line); transition: background .15s; }
+.lhead + .item { border-top: 0; }
+.item.done { background: var(--ok-soft); }
+.num { color: var(--faint); font-family: var(--mono); font-size: 11.5px; text-align: right; font-variant-numeric: tabular-nums; }
+
+.chk { position: relative; display: inline-grid; place-items: center; width: 24px; height: 24px; cursor: pointer; }
+.chk input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.chk span { width: 20px; height: 20px; border: 1.5px solid var(--line-2); border-radius: 5px; background: var(--panel); color: transparent; display: grid; place-items: center; transition: background .12s, border-color .12s; }
+.chk:hover span { border-color: var(--ok); }
+.chk input:checked + span { background: var(--ok); border-color: var(--ok); color: #fff; }
+.chk input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.c-name, .c-wh { display: flex; align-items: center; gap: 2px; min-width: 0; }
+.c-wh { flex-wrap: wrap; gap: 4px; }
+.cp { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; gap: 7px; min-width: 0; max-width: 100%; cursor: copy; border-radius: 6px; transition: background .12s, border-color .12s; }
+.cp:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.cp .t { min-width: 0; overflow-wrap: anywhere; }
+.cp .ck { display: none; color: var(--ok); flex: none; }
+.cp.is-copied .ck { display: inline-flex; }
+.nb { padding: 6px 8px; }
+.nb:hover { background: var(--hover); }
+.nb .t { font-family: var(--mono); font-size: 14.5px; font-weight: 600; letter-spacing: -.01em; }
+.item.done .nb .t { color: var(--muted); }
+.wb { padding: 4px 10px; min-width: 52px; justify-content: center; border: 1px solid var(--line-2); background: var(--panel); }
+.wb:hover { border-color: var(--accent); background: var(--accent-soft); }
+.wb .t { font-family: var(--mono); font-weight: 600; font-size: 13.5px; }
+.we { padding: 4px 10px; border: 1px dashed var(--line-2); color: var(--faint); font-size: 12.5px; cursor: text; }
+.we:hover { border-color: var(--accent); color: var(--accent); }
+.ed-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex: none; }
+.ic { flex: none; width: 28px; height: 28px; display: inline-grid; place-items: center; border: 0; background: none; border-radius: 6px; color: var(--muted); cursor: pointer; opacity: .45; transition: opacity .12s, background .12s; }
+.item:hover .ic, .ic:focus-visible { opacity: 1; }
+.ic:hover { background: var(--hover); color: var(--accent); }
+.hint { border: 1px solid transparent; background: var(--accent-soft); color: var(--accent); border-radius: 99px; padding: 1px 8px; font-family: var(--mono); font-size: 11.5px; cursor: pointer; }
+.hint:hover { border-color: var(--accent); }
+.warn { color: var(--warn); display: inline-flex; cursor: help; }
+.ed { flex: 1 1 auto; min-width: 0; width: 100%; height: 32px; padding: 0 9px; border: 1.5px solid var(--accent); border-radius: 6px; background: var(--panel); color: var(--text); font-family: var(--mono); font-size: 14px; outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
+.acwrap { position: relative; flex: 1 1 auto; min-width: 0; }
+.sug { position: absolute; left: 0; right: 0; top: calc(100% + 5px); z-index: 15; min-width: 150px; max-height: 232px; overflow-y: auto; padding: 4px; background: var(--panel); border: 1px solid var(--line-2); border-radius: 8px; box-shadow: var(--shadow); }
+.sug.up { top: auto; bottom: calc(100% + 5px); }
+.sug .sh { padding: 3px 9px 4px; font-size: 11px; color: var(--faint); }
+.so { padding: 6px 9px; border-radius: 5px; font-family: var(--mono); font-size: 13.5px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.so:hover { background: var(--hover); }
+.so.on { background: var(--accent-soft); color: var(--accent); }
+.so .soc { color: var(--faint); }
+.so.on .soc { color: inherit; opacity: .7; }
+
+@keyframes flash { from { background: var(--accent-soft); box-shadow: inset 0 0 0 2px var(--accent); } to { box-shadow: inset 0 0 0 2px transparent; } }
+.cp.flash { animation: flash .7s ease-out; }
+
+.c-ms { display: flex; gap: 3px; flex-wrap: wrap; }
+.m { font-family: var(--mono); font-size: 11px; padding: 1px 5px; border-radius: 4px; line-height: 1.5; }
+.m.on { background: var(--panel-2); border: 1px solid var(--line); color: var(--muted); }
+.m.off { border: 1px solid transparent; color: var(--ghost); }
+.item.done .m.on { background: transparent; }
+
+.vt { justify-self: end; display: inline-flex; align-items: center; gap: 3px; height: 28px; padding: 0 7px; border: 1px solid transparent; border-radius: 6px; background: none; color: var(--faint); cursor: pointer; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.vt.multi { color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+.vt:hover { border-color: var(--line-2); }
+.vt svg { transition: transform .15s; }
+.item.open .vt svg { transform: rotate(180deg); }
+
+.det { margin: 0 12px 12px 78px; padding: 8px 12px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel-2); }
+.dh { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px 12px; font-size: 12px; color: var(--muted); padding-bottom: 6px; }
+.da { display: inline-flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.vars { list-style: none; margin: 0; padding: 0; }
+.vars li { display: grid; grid-template-columns: minmax(0, 1fr) 70px minmax(0, 210px) 60px; gap: 10px; align-items: center; padding: 2px 0; border-top: 1px dashed var(--line); }
+.vn { padding: 3px 6px; font-family: var(--mono); font-size: 13px; overflow-wrap: anywhere; }
+.vn:hover { background: var(--hover); }
+.vw { font-family: var(--mono); font-size: 12.5px; }
+.vm { font-size: 12px; color: var(--muted); }
+.faint { color: var(--faint); }
+.lnk { all: unset; cursor: pointer; color: var(--accent); font-size: 12.5px; }
+.lnk:hover { text-decoration: underline; }
+.lnk:focus-visible { outline: 2px solid var(--accent); }
+.btn-s { border: 1px solid var(--line-2); background: var(--panel); border-radius: 6px; padding: 3px 10px; font-size: 12.5px; cursor: pointer; }
+.btn-s:hover { border-color: var(--accent); color: var(--accent); }
+.orig { font-size: 12.5px; color: var(--muted); margin-top: 6px; }
+.orig code { color: var(--text); }
+.empty { padding: 40px 16px; text-align: center; color: var(--muted); }
+
+body.merging .item { cursor: pointer; }
+body.merging .item .cp, body.merging .item .chk, body.merging .item .chk input { cursor: pointer; }
+body.merging .item:not(.msrc):hover { background: var(--accent-soft); box-shadow: inset 0 0 0 2px var(--accent); }
+body.merging .item.msrc { box-shadow: inset 0 0 0 2px var(--accent); opacity: .6; cursor: not-allowed; }
+
+.foot { color: var(--faint); font-size: 12px; margin-top: 14px; text-align: center; }
+
+.toast { position: fixed; left: 50%; bottom: 20px; z-index: 50; display: flex; align-items: center; gap: 14px; max-width: calc(100vw - 32px); padding: 9px 14px; border-radius: 10px; background: #1c2229; color: #f1f3f6; box-shadow: 0 8px 24px rgba(0, 0, 0, .28); font-size: 13.5px; opacity: 0; transform: translate(-50%, 10px); transition: opacity .15s, transform .15s; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast .tm { min-width: 0; overflow-wrap: anywhere; }
+.toast code { background: rgba(255, 255, 255, .1); padding: 1px 5px; border-radius: 4px; }
+.toast .tu { flex: none; border: 0; background: none; color: #8db4ff; font-weight: 600; cursor: pointer; padding: 0; }
+
+@media (max-width: 760px) {
+  .wrap { padding-inline: 16px; }
+  .titlebar { flex-direction: column; align-items: stretch; gap: 8px; }
+  .progress { min-width: 0; text-align: left; }
+  .lhead { display: none; }
+  .row { grid-template-columns: 26px minmax(0, 1fr) auto; grid-template-areas: "chk name vt" ". wh wh" ". ms ms"; row-gap: 2px; padding-block: 6px; }
+  .row > .chk { grid-area: chk; }
+  .row > .num { display: none; }
+  .row > .c-name { grid-area: name; }
+  .row > .c-wh { grid-area: wh; }
+  .row > .c-ms { grid-area: ms; padding-left: 8px; }
+  .row > .c-vt { grid-area: vt; }
+  .m.off { display: none; }
+  .ic { opacity: 1; }
+  .det { margin: 0 12px 12px; }
+  .vars li { grid-template-columns: minmax(0, 1fr) auto; }
+  .vars .vm { grid-column: 1 / -1; padding-left: 6px; }
+}
+</style>
+</head>
+<body>
+<div id="passGate" style="position:fixed;inset:0;background:#101317;color:#e5e8ec;display:flex;align-items:center;justify-content:center;font:14px/1.4 system-ui,sans-serif;z-index:999;">
+  <form id="passForm" style="background:#171b20;padding:28px 32px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.5);min-width:260px;">
+    <div style="margin-bottom:14px;font-size:15px;font-weight:600;">Unesi šifru za pristup</div>
+    <input id="passInput" type="password" autocomplete="off" style="width:100%;height:38px;padding:0 12px;border-radius:8px;border:1px solid #3a444f;background:#1c2127;color:#e5e8ec;font:inherit;outline:none;box-sizing:border-box;">
+    <div id="passError" style="color:#e3a643;font-size:12.5px;margin-top:8px;min-height:16px;"></div>
+    <button type="submit" style="margin-top:10px;width:100%;height:38px;border:0;border-radius:8px;background:#6da0ff;color:#0b1422;font-weight:600;cursor:pointer;">Uđi</button>
+  </form>
+</div>
+<div id="appContent" hidden>
+<header class="top">
+  <div class="wrap">
+    <div class="titlebar">
+      <div>
+        <h1>Werkzeuge <span class="arrow">→</span> ERP</h1>
+        <div class="sub" id="sub"></div>
+      </div>
+      <div class="progress">
+        <div class="pnum"><b id="pDone">0</b> / <span id="pTotal">0</span> übertragen</div>
+        <div class="bar"><i id="pBar"></i></div>
+      </div>
+    </div>
+    <div class="controls">
+      <label class="search">
+        <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><circle cx="7" cy="7" r="4.8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10.6 10.6L14 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <input id="q" type="search" placeholder="Werkzeug, Lagerplatz, Maschine…  ( / )" autocomplete="off" spellcheck="false">
+      </label>
+      <div class="seg" id="seg" role="group" aria-label="Ansicht">
+        <button data-f="todo">Zu übertragen<span class="n"></span></button>
+        <button data-f="done">Übertragen<span class="n"></span></button>
+        <button data-f="all">Alle<span class="n"></span></button>
+      </div>
+      <div class="chips" id="chips"></div>
+      <label class="toggle"><input type="checkbox" id="expandAll"> Gruppeninhalt anzeigen</label>
+      <details class="menu" id="menu">
+        <summary>Mehr <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></summary>
+        <div class="pop">
+          <button data-m="export"><span>Liste als CSV exportieren (Excel)<span class="hintline"></span></span></button>
+          <button data-m="backup">Sicherungskopie des Fortschritts speichern</button>
+          <button data-m="restore">Sicherungskopie laden…</button>
+          <hr>
+          <button data-m="import">Neuen CSV-Export von den Maschinen laden…</button>
+          <button data-m="embedded" id="mEmbedded">Eingebettete Werkzeugliste wiederherstellen</button>
+          <hr>
+          <label><input type="checkbox" id="autoEmpty"><span>Wenn der Lagerplatz leer ist, bereits nach dem Kopieren des Namens als übertragen markieren</span></label>
+          <hr>
+          <button data-m="reset" class="danger">Gesamten Fortschritt löschen…</button>
+        </div>
+      </details>
+    </div>
+  </div>
+  <div class="mergebar" id="mergebar" hidden>
+    <div class="wrap">
+      <span>Zusammenführen: Gruppe anklicken, in die <b id="mName"></b> verschoben werden soll</span>
+      <button id="mCancel">Abbrechen (Esc)</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <p class="help">
+    <span>Klick auf <b>Name</b> oder <b>Lagerplatz</b> → in die Zwischenablage kopiert</span>
+    <span>Wenn beides kopiert wurde, wird der Eintrag automatisch als übertragen markiert</span>
+    <span><svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M11.1 2.2a1.6 1.6 0 0 1 2.3 0l.4.4a1.6 1.6 0 0 1 0 2.3L6 12.7l-3.3.8.8-3.3 7.6-8z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg> bearbeiten · beim Lagerplatz mit ↓↑ Vorschlag wählen · Enter speichert · Esc bricht ab</span>
+  </p>
+  <div class="list" id="list"></div>
+  <p class="foot">Alles wird automatisch in diesem Browser gespeichert. Sicherheitshalber gelegentlich: Mehr → Sicherungskopie speichern.</p>
+</main>
+
+<div class="toast" id="toast" hidden></div>
+<input type="file" id="fileCsv" accept=".csv,.txt,text/csv" hidden>
+<input type="file" id="fileJson" accept=".json,application/json" hidden>
+
+<script type="text/csv" id="csv-data">
+"Werkzeuge","Lagerplatz","Maschine"
+"1901728-OW203/S R5/60 H216.5","15","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"1901728-OW203/S R5/60 H216.5 ()","15","TRUMPF TruBend 7050"
+"1901728-OW203/S R5/60 H217.5","15","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"1901728-OW203/S R5/60 H217.5 ()","15","TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"57 R5 V230 ()","10","TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"57 R5 V230 (1C2)","10","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"58 R10 V230 ()","10","TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"58 R10 V230 (1C3)","10","TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"58 R8 V230 ()","","TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"58 R8 V230 (1C6)","10","TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"59 R15 V230 ()","10","TRUMPF TruBend 5230"
+"59 R15 V230 (1C4)","10","TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"866297-EV W50/30 R5 H100","5","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"866297-EV W50/30 R5 H100 ()","","TRUMPF TruBend 5230"
+"866297-EV W50/30 R5 H100 LP5","","TRUMPF TruBend 7036"
+"biohort pressen (0C18)","","TRUMPF TruBend 7050"
+"EV W100/80 R8","25","TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"EV W12/84 R1","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050"
+"EV W16/84 R1.6","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050"
+"EV W30/30 R3","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"EV W30/80 R5","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"EV W30/80 R5 H98","","TRUMPF TruBend 5320"
+"EV W40/80 R5","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"EV W50/30 R5","","TRUMPF TruBend 5320"
+"EV W50/80 R5","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"EV W50/80 R5 LP2","","TRUMPF TruBend 7036"
+"EV W60/80 R5","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"EV W60/80 R5 LP7","","TRUMPF TruBend 7036"
+"EV W8/84 R0.8","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050"
+"EV W80/80 R5","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"EV-F W8/30 R2.5","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050"
+"EV/S W10/84 R1","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"EV/S W10/84 R1 H98,5","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050"
+"EV/S W4/84 R0.6","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5320"
+"EV/S W5/30 R2","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050"
+"EV/S W6/84 R0.6","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"EV/S W8/84 R0.8","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"EV/S W8/84 R0.8 H98.5","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"EV002 W8/30 R1","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"EV002 W8/30 R1 LP20","","TRUMPF TruBend 7036"
+"EV002 W8/30 R1_c","","TRUMPF TruBend 7036"
+"EV002/S W8/30 R1","","TRUMPF TruBend 7050"
+"EV003 W10/30 R1","","TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"EV004 W12/30 R1","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"EV004 W12/30 R1 H98","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050"
+"EV004 W12/30 R1 H98 ()","","TRUMPF TruBend 7050"
+"EV004 W12/30 R1 H98.5","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"EV004 W12/30 R1_Copy","","TRUMPF TruBend 5320"
+"EV004 W12/30 R3","","TRUMPF TruBend 7050"
+"EV004/S W12/30 R1","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"EV004/S W12/30 R1 99","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"EV004/S W12/30 R1 99,5","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"EV004/S W12/30 R1 H99","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"EV004/S W12/30 R1 H99 ()","","TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"EV004/S W12/30 R1 Neu","","TRUMPF TruBend 7036 | TRUMPF TruBend 5320"
+"EV005 W16/30 H99,5","","TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"EV005 W16/30 H99,5 ()","","TRUMPF TruBend 5320"
+"EV005 W16/30 R1.6","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"EV005 W16/30 R1.6 H96,5","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050"
+"EV005 W16/30 R1.6 H99,5","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"EV005 W16/30 R1.6 H99,5 (???)","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"EV005 W16/30 R1.6 H99,5 ()","","TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"EV005 W16/30 R1.6 H99,5 LP19","","TRUMPF TruBend 7036"
+"EV005 W16/30 R1.6 neu LP30","","TRUMPF TruBend 7036"
+"EV005 W16/30 R3","","TRUMPF TruBend 5230"
+"EV006 W20/30 R2","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"EV006 W20/30 R2 LP20","","TRUMPF TruBend 7036 | TRUMPF TruBend 5230"
+"EV007 W24/30 R2,5 H100","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050"
+"EV007 W24/30 R2,5 H96","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"EV007 W24/30 R2,5 H96 ()","","TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"EV007 W24/30 R2,5 H96 (1C0C1709668)","","TRUMPF TruBend 5320"
+"EV007 W24/30 R2.5","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"EV007 W24/30 R2.5 1709668","","TRUMPF TruBend 5230"
+"EV007 W24/30 R2.5 2603324 ()","","TRUMPF TruBend 7050"
+"EV007 W24/30 R2.5 2603324 (1C0C1709668)","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"EV007 W24/30 R2.5 H96","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"EV007 W24/30 R2.5 H96 (1C0C1709668)","","TRUMPF TruBend 5320"
+"EV007 W24/30 R2.5 H97,5 (1C0C1709668)","","TRUMPF TruBend 5320"
+"EV007 W24/30 R2.5 H99","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"EV007 W24/30 R2.5_c","","TRUMPF TruBend 7050"
+"EV007/H W24/30 R2.5","","TRUMPF TruBend 7050"
+"EV026 W24/86 R2.5","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050"
+"EV029 W50/86 R3","","TRUMPF TruBend 7050"
+"EV044 W16/90 R1.6","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050"
+"EVZ 10/90","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"EVZ 10/90_ WITTUR","","TRUMPF TruBend 7050"
+"EVZ 10/90_c","","TRUMPF TruBend 7050"
+"EVZ 8/90 H100 BANSS","","TRUMPF TruBend 7050"
+"FalzwerkzeugSchmid (0C16)","","TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"FWZ","","TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"FWZ (Front)","","TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"FWZ H100","","TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"MW 100/80° / H=85mm/","","TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"MW 100/80° / H=85mm/_c_c","","TRUMPF TruBend 7050"
+"mw 12/30 H53,8","","TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"MW 12/30 H53.8 ()","","TRUMPF TruBend 7050"
+"mw 12/30 H55mm (beyeler alt)","","TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"mw50neu (H=55mm/86°)","","TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"OW_ZE_Flach","","TRUMPF TruBend 7050"
+"OW/K UKB 15.050 BANSS","","TRUMPF TruBend 7050"
+"OW200/S R1/86 H218","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"OW200/S R1/86 H220","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"OW200/S R3/86 Fit-Zel","","TRUMPF TruBend 7050"
+"OW200/S R3/86 H218.5","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"OW200/SR1/86 H218","","TRUMPF TruBend 5230"
+"OW202/K R1/28 H120","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"ow202/k R1/86 H118,5","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"OW202/K R3.2/28 H112.7","","TRUMPF TruBend 7050"
+"OW202/K R3/28 H111,5","","TRUMPF TruBend 5230"
+"OW202/K R3/28 H111.5","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050"
+"OW202/K R3/28 H112.8","","TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"OW202/S R1/28 H218","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"OW202/S R1/28 H218 ()","","TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"OW202/S R1/28 H219","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5320"
+"OW202/S R1/28 H220","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"OW202/S R3/28 H212.8","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"OW203/K R10/10 H120","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"OW203/K R5/60 H118","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"OW203/K R5/60 H118_c ()","","TRUMPF TruBend 7050"
+"OW203/K R5/60 H118.8","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"OW203/S R10/28 H220","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"OW203/S R8/60 H218,5","","TRUMPF TruBend 5320"
+"OW203/S R8/60 H218.5","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050"
+"OW203/S R8/60 H219","","TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"OW203/S R8/60 H219,5","","TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"OW203/S R8/60 H220","","TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"OW210 R1/28 H140","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050"
+"OW210/S R1/28 H140","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"OW210/S R1/28 H240","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"OW211/K R1/89.66 H120","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050"
+"OW215/K R0.5/20 H140 1908003","","TRUMPF TruBend 5230"
+"OW215/K R2/20 H140","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"OW280/K R0.5/80 H140","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"OW280/K R0.5/80 H140_c","","TRUMPF TruBend 7036"
+"OWR1/Z H100 WITTUR","","TRUMPF TruBend 7050"
+"OWR1/Z H100_c_c","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"OWR1/Z H100_c_c_c","","TRUMPF TruBend 7050"
+"OWZ/K 10/90","","TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"R12 (0994059_c)","","TRUMPF TruBend 7050"
+"R15","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5320"
+"R15_c","","TRUMPF TruBend 7050"
+"R20","","TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"RB 500 H100","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050"
+"RB1200","","TRUMPF TruBend 5320"
+"RB1200 H100","","TRUMPF TruBend 5320"
+"RB200 H100","","TRUMPF TruBend 7036"
+"RB400 H100","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"RB500 H100","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050"
+"RB600 H100","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"RB600 H100_c","","TRUMPF TruBend 7050"
+"RB600 H99,5","","TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"rfa4 ()","","TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"rfa4 (0C5)","","TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"RollBend RB400","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"Rollbend RB500","","TRUMPF TruBend 5320"
+"RollBend RB600","","TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"Schmid W8-S H53.5","","TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"SchmidOW (0C18)","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"SCHWENK WERKZEUG","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"ukb-29.300 RB500 H100","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5320"
+"ukb-29.300 RB500 H100 ()","","TRUMPF TruBend 7050"
+"UW16 /V230/ H 53,93mm R 2,5 ()","","TRUMPF TruBend 7050"
+"UW16 /V230/ H 53,93mm R 2,5_c","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050"
+"UW32 V230 (0C14)","","TRUMPF TruBend 7050 | TRUMPF TruBend 5230"
+"UW32 V230 LP21 (0C14)","","TRUMPF TruBend 7036"
+"UW32Beyerle (0C14)","","TRUMPF TruBend 7036 | TRUMPF TruBend 7050 | TRUMPF TruBend 5230 | TRUMPF TruBend 5320"
+"UW32Beyerle LP5 (0C14)","","TRUMPF TruBend 7036"
+"VLMBN W62/40 R8","","TRUMPF TruBend 5320"
+"VLMBN W65/200 R10","","TRUMPF TruBend 5320"
+"VLMBN W82.5/50 R8","","TRUMPF TruBend 5230"
+"VLMDN W182.8/80 R12.5","","TRUMPF TruBend 5230"
+"w8 r1 53,39","","TRUMPF TruBend 5320"
+</script>
+<script>
+/* ---------- CSV ---------- */
+function parseCSV(text) {
+  text = String(text || '').replace(/^﻿/, '');
+  const first = text.split(/\r?\n/, 1)[0] || '';
+  const delim = (first.match(/;/g) || []).length > (first.match(/,/g) || []).length ? ';' : ',';
+  const rows = [];
+  let row = [], field = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) {
+      if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else q = false; }
+      else field += c;
+    } else if (c === '"') q = true;
+    else if (c === delim) { row.push(field); field = ''; }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[i + 1] === '\n') i++;
+      row.push(field); rows.push(row); row = []; field = '';
+    } else field += c;
+  }
+  if (field !== '' || row.length) { row.push(field); rows.push(row); }
+
+  let iN = 0, iL = 1, iM = 2, start = 0;
+  const head = (rows[0] || []).map(h => h.trim().toLowerCase());
+  if (head.some(h => /werkzeug|lager|maschin|naziv|alat|skladi|stroj|tool/.test(h))) {
+    const find = (re, d) => { const i = head.findIndex(h => re.test(h)); return i < 0 ? d : i; };
+    iN = find(/werkzeug|naziv|alat|tool|name/, 0);
+    iL = find(/lager|skladi|storage|location/, 1);
+    iM = find(/maschin|stroj|machine/, 2);
+    start = 1;
+  }
+  const out = [];
+  for (let r = start; r < rows.length; r++) {
+    const name = (rows[r][iN] || '').trim();
+    if (!name) continue;
+    out.push({
+      name,
+      lager: (rows[r][iL] || '').trim(),
+      machines: (rows[r][iM] || '').split('|').map(s => s.trim()).filter(Boolean)
+    });
+  }
+  return out;
+}
+
+/* ---------- grupiranje ---------- */
+// sadrzaj zagrade koji je samo oznaka: (), (???), (1C2), (0C18), (1C0C1709668)
+const CODE_PAREN = /^(\?*|\d*c\d+(c\d+)*)$/i;
+const COPY_SUFFIX = /(?:_c(?:opy)?)+(?=$|[\s_()])/gi;
+const LP_TOKEN = /\bLP\s*(\d+)\b/gi;
+
+function stripNoise(name) {
+  let s = String(name);
+  s = s.replace(COPY_SUFFIX, '');
+  s = s.replace(/\(([^)]*)\)/g, (m, inner) => {
+    const t = inner.replace(COPY_SUFFIX, '').trim();
+    return CODE_PAREN.test(t) ? ' ' : ' (' + t + ') ';
+  });
+  s = s.replace(LP_TOKEN, ' ');
+  return s;
+}
+
+function lpHints(name) {
+  const out = [];
+  String(name).replace(LP_TOKEN, (m, n) => { out.push(n); return m; });
+  return out;
+}
+
+function cleanName(name) {
+  return stripNoise(name)
+    .replace(/(\d),(\d)/g, '$1.$2')
+    .replace(/_(?=\s|$)/g, ' ')
+    .replace(/\(\s+/g, '(').replace(/\s+\)/g, ')')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function autoKey(name) {
+  let s = stripNoise(name).toLowerCase();
+  s = s.replace(/\bneu\b/g, ' ');
+  s = s.replace(/(\d),(\d)/g, '$1.$2');
+  s = s.replace(/(\d)\s*mm\b/g, '$1');
+  s = s.replace(/[()=°_\-]/g, ' ');
+  let toks = s.split(/\s+/).filter(Boolean)
+    .map(t => t.replace(/(\d+)\.(\d+)/g, (m, a, b) => { b = b.replace(/0+$/, ''); return b ? a + '.' + b : a; }));
+  // "H 53.93" -> "h53.93", "R 2.5" -> "r2.5"
+  const j = [];
+  for (let i = 0; i < toks.length; i++) {
+    if (/^[hrvw]$/.test(toks[i]) && /^\d/.test(toks[i + 1] || '')) { j.push(toks[i] + toks[i + 1]); i++; }
+    else j.push(toks[i]);
+  }
+  // visina bez "H": "EV004/S W12/30 R1 99" -> h99
+  if (!j.some(t => /(^|\/)h\d/.test(t))) {
+    let seenR = false;
+    for (let i = 1; i < j.length; i++) {
+      if (/(^|\/)r\d/.test(j[i])) { seenR = true; continue; }
+      if (seenR && /^\d+(\.\d+)?$/.test(j[i])) {
+        const v = parseFloat(j[i]);
+        if (v >= 40 && v <= 400) { j[i] = 'h' + j[i]; break; }
+      }
+    }
+  }
+  return j.join('').replace(/\/+/g, '/').replace(/^\/|\/$/g, '');
+}
+
+function upperCount(s) { return (s.match(/[A-ZČĆŽŠĐ]/g) || []).length; }
+
+function buildGroups(data, overrides, machineOrder) {
+  const map = new Map();
+  for (const row of data) {
+    const key = overrides[row.name] || autoKey(row.name);
+    let g = map.get(key);
+    if (!g) { g = { key, variants: [] }; map.set(key, g); }
+    g.variants.push(row);
+  }
+  const groups = [];
+  for (const g of map.values()) {
+    const ms = new Set();
+    g.variants.forEach(v => v.machines.forEach(m => ms.add(m)));
+    // prijedlog naziva: najzastupljeniji ocisceni oblik
+    const tally = new Map();
+    for (const v of g.variants) {
+      const c = cleanName(v.name), lk = c.toLowerCase(), w = Math.max(1, v.machines.length);
+      let t = tally.get(lk);
+      if (!t) { t = { lk, w: 0, forms: new Map() }; tally.set(lk, t); }
+      t.w += w;
+      t.forms.set(c, (t.forms.get(c) || 0) + w);
+    }
+    const best = [...tally.values()].sort((a, b) => b.w - a.w || a.lk.length - b.lk.length || (a.lk < b.lk ? -1 : 1))[0];
+    const form = [...best.forms.entries()].sort((a, b) => upperCount(b[0]) - upperCount(a[0]) || b[1] - a[1])[0][0];
+    const whs = [...new Set(g.variants.map(v => v.lager).filter(Boolean))];
+    const hints = [...new Set(g.variants.flatMap(v => lpHints(v.name)))];
+    groups.push({
+      key: g.key,
+      variants: g.variants,
+      machines: machineOrder.filter(m => ms.has(m)),
+      autoName: form,
+      autoWh: whs.join(' / '),
+      whConflict: whs.length > 1,
+      lpHints: hints
+    });
+  }
+  return groups;
+}
+
+(function () {
+'use strict';
+
+const LS = 'alati-erp-prijenos-v1';
+const $ = s => document.querySelector(s);
+const list = $('#list');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const coll = new Intl.Collator('de', { numeric: true, sensitivity: 'base' });
+const EMBEDDED = document.getElementById('csv-data').textContent.trim();
+
+const ICON = {
+  pencil: '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M11.1 2.2a1.6 1.6 0 0 1 2.3 0l.4.4a1.6 1.6 0 0 1 0 2.3L6 12.7l-3.3.8.8-3.3 7.6-8z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>',
+  check: '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  chev: '<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  warn: '<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M8 2.2L14.3 13H1.7z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M8 6.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11.2" r=".85" fill="currentColor"/></svg>'
+};
+
+/* ---------- Zustand (localStorage) ---------- */
+function defaults(s) {
+  s = s && typeof s === 'object' ? s : {};
+  const obj = o => (o && typeof o === 'object' && !Array.isArray(o) ? o : {});
+  const arr = a => (Array.isArray(a) ? a : []);
+  const u = obj(s.ui);
+  return {
+    v: 1,
+    groups: obj(s.groups),        // key -> { n: Name, w: Lagerplatz, d: übertragen, t: Zeitpunkt, cn/cw: kopiert }
+    overrides: obj(s.overrides),  // ursprünglicher Name -> Gruppenschlüssel (manuelles Zusammenführen / Trennen)
+    csv: typeof s.csv === 'string' ? s.csv : null,
+    ui: {
+      filter: ['todo', 'done', 'all'].includes(u.filter) ? u.filter : 'todo',
+      machines: arr(u.machines),
+      expandAll: !!u.expandAll,
+      expanded: arr(u.expanded),
+      collapsed: arr(u.collapsed),
+      q: typeof u.q === 'string' ? u.q : '',
+      autoEmpty: !!u.autoEmpty,
+      scroll: +u.scroll || 0
+    }
+  };
+}
+function load() {
+  try { return defaults(JSON.parse(localStorage.getItem(LS))); } catch (e) { return defaults(null); }
+}
+let saveWarned = false;
+function save() {
+  try { localStorage.setItem(LS, JSON.stringify(S)); }
+  catch (e) {
+    if (!saveWarned) { saveWarned = true; alert('Der Browser erlaubt kein Speichern (localStorage), daher wird der Fortschritt nicht gespeichert.\nVerwende Mehr → Sicherungskopie speichern.'); }
+  }
+}
+
+let S = load();
+let DATA = [], GROUPS = [], BYKEY = new Map(), MACHINES = [];
+let editing = null;     // { key, f: 'n' | 'w' }
+let mergeSrc = null;    // Schlüssel der Gruppe, die zusammengeführt wird
+const sticky = new Set(); // Einträge, die trotz Filterwechsel sichtbar bleiben (damit Zeilen nicht springen)
+
+const short = m => m.replace(/^\s*trumpf\s+/i, '').replace(/^trubend\s+/i, '');
+const st = k => S.groups[k] || {};
+const mut = k => S.groups[k] || (S.groups[k] = {});
+const nameOf = g => { const s = st(g.key); return s.n != null ? s.n : g.autoName; };
+const whOf = g => { const s = st(g.key); return s.w != null ? s.w : g.autoWh; };
+const isDone = g => !!st(g.key).d;
+function tidy(k) {
+  const s = S.groups[k];
+  if (s && !s.d && !s.cn && !s.cw && s.n == null && s.w == null) delete S.groups[k];
+}
+function isOpen(k) { return S.ui.expandAll ? !S.ui.collapsed.includes(k) : S.ui.expanded.includes(k); }
+function setOpen(k, open) {
+  const arr = S.ui.expandAll ? S.ui.collapsed : S.ui.expanded;
+  const want = S.ui.expandAll ? !open : open;
+  const i = arr.indexOf(k);
+  if (want && i < 0) arr.push(k);
+  if (!want && i >= 0) arr.splice(i, 1);
+}
+const plural = (n, one, many) => (n === 1 ? one : many);
+const fmtDate = t => new Date(t).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+function rebuild() {
+  DATA = parseCSV(S.csv || EMBEDDED);
+  const ms = new Set();
+  DATA.forEach(r => r.machines.forEach(m => ms.add(m)));
+  MACHINES = [...ms].sort((a, b) => coll.compare(short(a), short(b)));
+  GROUPS = buildGroups(DATA, S.overrides, MACHINES)
+    .sort((a, b) => coll.compare(a.autoName, b.autoName) || (a.key < b.key ? -1 : 1));
+  GROUPS.forEach((g, i) => { g.idx = i + 1; });
+  BYKEY = new Map(GROUPS.map(g => [g.key, g]));
+  S.ui.machines = S.ui.machines.filter(m => ms.has(m));
+  list.style.setProperty('--ms-w', MACHINES.length <= 6 ? Math.max(90, MACHINES.length * 41) + 'px' : '220px');
+}
+
+/* ---------- Filterung ---------- */
+const norm = s => String(s).toLowerCase().replace(/(\d),(\d)/g, '$1.$2');
+function hayOf(g) {
+  const h = [nameOf(g), whOf(g), g.autoName, g.machines.map(short).join(' ')]
+    .concat(g.variants.map(v => v.name + ' ' + v.lager)).map(norm).join('  ');
+  return h + '  ' + h.replace(/\s+/g, '');
+}
+function visible() {
+  const words = norm(S.ui.q).split(/\s+/).filter(Boolean);
+  return GROUPS.filter(g => {
+    if (sticky.has(g.key)) return true;
+    const d = isDone(g);
+    if (S.ui.filter === 'todo' && d) return false;
+    if (S.ui.filter === 'done' && !d) return false;
+    if (S.ui.machines.length && !g.machines.some(m => S.ui.machines.includes(m))) return false;
+    if (words.length) { const h = hayOf(g); if (!words.every(w => h.includes(w))) return false; }
+    return true;
+  });
+}
+
+/* ---------- Anzeige ---------- */
+function render() { renderHeader(); renderList(); }
+
+function renderHeader() {
+  const total = GROUPS.length, done = GROUPS.filter(isDone).length;
+  $('#pDone').textContent = done;
+  $('#pTotal').textContent = total;
+  $('#pBar').style.width = total ? (done / total * 100).toFixed(2) + '%' : '0';
+  $('#sub').textContent = `${DATA.length} ${plural(DATA.length, 'Eintrag', 'Einträge')} von den Maschinen → ${total} ${plural(total, 'Werkzeuggruppe', 'Werkzeuggruppen')}` + (S.csv ? ' · CSV geladen' : '');
+  document.title = `${done}/${total} · Werkzeuge → ERP`;
+  const counts = { todo: total - done, done, all: total };
+  document.querySelectorAll('#seg button').forEach(b => {
+    b.classList.toggle('on', b.dataset.f === S.ui.filter);
+    b.querySelector('.n').textContent = counts[b.dataset.f];
+  });
+  $('#chips').innerHTML = MACHINES.length > 1
+    ? '<span class="lbl">Maschine:</span>' + MACHINES.map(m => `<button class="chip ${S.ui.machines.includes(m) ? 'on' : ''}" data-m="${esc(m)}" title="${esc(m)}">${esc(short(m))}</button>`).join('')
+    : '';
+  $('#expandAll').checked = S.ui.expandAll;
+  $('#autoEmpty').checked = S.ui.autoEmpty;
+  $('#mEmbedded').hidden = !S.csv;
+  document.querySelector('[data-m="export"] .hintline').textContent = 'Name; Lagerplatz; Maschinen; übertragen; ursprüngliche Einträge';
+  const src = mergeSrc && BYKEY.get(mergeSrc);
+  $('#mergebar').hidden = !src;
+  document.body.classList.toggle('merging', !!src);
+  if (src) $('#mName').textContent = nameOf(src);
+}
+
+function renderList() {
+  const vis = visible();
+  const head = '<div class="lhead"><span></span><span>#</span><span>Werkzeugname</span><span>Lagerplatz</span><span>Maschinen</span><span></span></div>';
+  if (!vis.length) {
+    list.innerHTML = head + `<div class="empty">${GROUPS.length ? (S.ui.filter === 'todo' && !S.ui.q && !S.ui.machines.length ? 'Alles ist übertragen. 🎉' : 'Keine Einträge für diese Ansicht.') : 'Die Liste ist leer.'}</div>`;
+    return;
+  }
+  list.innerHTML = head + vis.map(itemHTML).join('');
+  if (editing) {
+    const inp = list.querySelector('input.ed');
+    if (inp) { inp.focus(); inp.select(); if (inp.dataset.ac) updateSug(inp, true); } else editing = null;
+  }
+}
+
+/* ---------- Lagerplatz-Vorschläge ---------- */
+const whNorm = s => String(s).toLowerCase().replace(/[\s.,\-_/]+/g, '');
+const isPureNumber = s => /^\d+([.,]\d+)?$/.test(String(s).trim());
+let sugItems = [], sugIdx = -1;
+// Text vor einer laufenden Nummer am Ende, z.B. "Apffelturm Fach 20" -> "Apffelturm Fach"
+// (Schubladen-/Fachsysteme mit vielen Nummern) — kein Leerzeichen davor (wie bei "A-12") heißt kein Fach-System
+const trailingNumberPrefix = s => { const m = String(s).trim().match(/^(.*\S)\s+\d+$/); return m ? m[1].trim() : null; };
+// alle Lagerplätze, die bei anderen Werkzeugen bereits erfasst sind — nur Text wird vorgeschlagen,
+// reine Zahlen werden direkt eingetippt (keine Vorschlagsliste nötig). Bei Fach-Systemen wird nur
+// der Textteil vorgeschlagen, die Nummer tippt man nach dem Auswählen selbst weiter.
+function whOptions(exceptKey) {
+  const prefixMap = new Map(), fullMap = new Map();
+  for (const g of GROUPS) {
+    if (g.key === exceptKey) continue;
+    const w = whOf(g).trim();
+    if (!w || isPureNumber(w)) continue;
+    const prefix = trailingNumberPrefix(w);
+    if (prefix && !isPureNumber(prefix)) { const key = whNorm(prefix); if (key && !prefixMap.has(key)) prefixMap.set(key, prefix); }
+    else { const key = whNorm(w); if (!fullMap.has(key)) fullMap.set(key, w); }
+  }
+  const out = [];
+  for (const [key, text] of prefixMap) out.push({ text, type: 'prefix' });
+  for (const [key, text] of fullMap) if (!prefixMap.has(key)) out.push({ text, type: 'full' });
+  return out.sort((a, b) => coll.compare(a.text, b.text));
+}
+function updateSug(inp, showAll) {
+  const box = inp.parentElement.querySelector('.sug');
+  const typed = inp.value.trim(), q = whNorm(typed);
+  let items = whOptions(editing && editing.key);
+  if (q && !showAll) {
+    const starts = [], contains = [];
+    for (const it of items) {
+      const n = whNorm(it.text);
+      if (n.startsWith(q)) starts.push(it); else if (n.includes(q)) contains.push(it);
+    }
+    items = starts.concat(contains);
+  }
+  sugItems = items.filter(it => it.text !== typed);
+  sugIdx = -1;
+  if (!sugItems.length) { box.hidden = true; inp.setAttribute('aria-expanded', 'false'); return; }
+  box.innerHTML = '<div class="sh">Bereits erfasste Lagerplätze</div>'
+    + sugItems.map((it, i) => `<div class="so" role="option" data-act="pick" data-i="${i}" title="${it.type === 'prefix' ? 'Auswählen und Nummer weitertippen' : ''}">${esc(it.text)}${it.type === 'prefix' ? '<span class="soc"> …</span>' : ''}</div>`).join('');
+  box.hidden = false;
+  inp.setAttribute('aria-expanded', 'true');
+  const r = inp.getBoundingClientRect();
+  box.classList.toggle('up', r.bottom + 245 > window.innerHeight && r.top > 300);
+}
+// füllt den Fach-Präfix ein und lässt das Feld offen, damit die Nummer weitergetippt werden kann
+function applyPrefix(inp, item) {
+  inp.value = item.text + ' ';
+  inp.focus();
+  inp.setSelectionRange(inp.value.length, inp.value.length);
+  updateSug(inp);
+}
+function moveSug(inp, d) {
+  const box = inp.parentElement.querySelector('.sug');
+  if (box.hidden) { updateSug(inp); if (box.hidden) return; }
+  sugIdx = Math.max(-1, Math.min(sugItems.length - 1, sugIdx + d));
+  box.querySelectorAll('.so').forEach((el, i) => el.classList.toggle('on', i === sugIdx));
+  const on = box.querySelector('.so.on');
+  if (on) on.scrollIntoView({ block: 'nearest' });
+}
+
+function itemHTML(g) {
+  const s = st(g.key), done = !!s.d, open = isOpen(g.key);
+  const cls = ['item', done && 'done', open && 'open', mergeSrc === g.key && 'msrc'].filter(Boolean).join(' ');
+  const multi = g.variants.length > 1;
+  return `<div class="${cls}" data-key="${esc(g.key)}">
+  <div class="row">
+    <label class="chk" title="${done ? 'Übertragen' + (s.t ? ' ' + fmtDate(s.t) : '') + ' — klicken zum Rückgängigmachen' : 'Als übertragen markieren'}"><input type="checkbox" data-act="done"${done ? ' checked' : ''} aria-label="Übertragen"><span>${ICON.check}</span></label>
+    <div class="num">${g.idx}</div>
+    <div class="c-name">${nameCell(g, s)}</div>
+    <div class="c-wh">${whCell(g, s)}</div>
+    <div class="c-ms">${machinesHTML(g)}</div>
+    <div class="c-vt"><button class="vt${multi ? ' multi' : ''}" data-act="tg" aria-expanded="${open}" title="${multi ? g.variants.length + ' Einträge in der Gruppe — anzeigen' : 'Ursprünglichen Eintrag anzeigen'}">${g.variants.length}${ICON.chev}</button></div>
+  </div>${open ? detHTML(g, s) : ''}
+</div>`;
+}
+
+function nameCell(g, s) {
+  const name = nameOf(g);
+  if (editing && editing.key === g.key && editing.f === 'n')
+    return `<input class="ed" value="${esc(name)}" spellcheck="false" aria-label="Werkzeugname">`;
+  return `<button class="cp nb${s.cn ? ' is-copied' : ''}" data-act="cn" title="${s.n != null ? 'Manuell bearbeitet · ' : ''}Klicken zum Kopieren des Namens">`
+    + (s.n != null ? '<i class="ed-dot"></i>' : '')
+    + `<span class="t">${esc(name)}</span><span class="ck">${ICON.check}</span></button>`
+    + `<button class="ic" data-act="en" title="Namen bearbeiten" aria-label="Namen bearbeiten">${ICON.pencil}</button>`;
+}
+
+function whCell(g, s) {
+  const wh = whOf(g);
+  if (editing && editing.key === g.key && editing.f === 'w')
+    return `<div class="acwrap"><input class="ed" data-ac="wh" value="${esc(wh)}" spellcheck="false" autocomplete="off" placeholder="Lagerplatz" aria-label="Lagerplatz" role="combobox" aria-autocomplete="list" aria-expanded="false"><div class="sug" role="listbox" hidden></div></div>`;
+  let h;
+  if (wh) {
+    h = `<button class="cp wb${s.cw ? ' is-copied' : ''}" data-act="cw" title="${s.w != null ? 'Manuell bearbeitet · ' : ''}Klicken zum Kopieren des Lagerplatzes">`
+      + (s.w != null ? '<i class="ed-dot"></i>' : '')
+      + `<span class="t">${esc(wh)}</span><span class="ck">${ICON.check}</span></button>`
+      + `<button class="ic" data-act="ew" title="Lagerplatz bearbeiten" aria-label="Lagerplatz bearbeiten">${ICON.pencil}</button>`;
+  } else {
+    h = `<button class="cp we" data-act="ew" title="Lagerplatz eingeben">+ Lagerplatz</button>`;
+    h += g.lpHints.map(n => `<button class="hint" data-act="lp" data-v="${esc(n)}" title="Im Namen eines Eintrags steht LP${esc(n)} (Lagerplatz?) — klicken, um ${esc(n)} als Lagerplatz einzutragen">LP${esc(n)}?</button>`).join('');
+  }
+  if (s.w == null && g.whConflict) h += `<span class="warn" title="Einträge in der Gruppe haben unterschiedliche Lagerplätze: ${esc(g.autoWh)}">${ICON.warn}</span>`;
+  return h;
+}
+
+function machinesHTML(g) {
+  const ms = MACHINES.length <= 6 ? MACHINES : g.machines;
+  return ms.map(m => {
+    const on = g.machines.includes(m);
+    return `<span class="m ${on ? 'on' : 'off'}" title="${esc(m)}${on ? '' : ' — nicht vorhanden'}">${esc(short(m))}</span>`;
+  }).join('');
+}
+
+function detHTML(g, s) {
+  const n = g.variants.length;
+  const hasOv = g.variants.some(v => S.overrides[v.name] != null);
+  const rows = g.variants.map((v, i) => `<li>
+      <button class="cp vn" data-act="cv" data-i="${i}" title="Klicken zum Kopieren des ursprünglichen Eintrags">${esc(v.name)}</button>
+      <span class="vw">${v.lager ? esc(v.lager) : '<span class="faint">—</span>'}</span>
+      <span class="vm">${v.machines.map(m => esc(short(m))).join(' · ') || '<span class="faint">—</span>'}</span>
+      ${n > 1 ? `<button class="lnk" data-act="split" data-i="${i}" title="Diesen Eintrag in eine eigene Gruppe verschieben">Trennen</button>` : '<span></span>'}
+    </li>`).join('');
+  let extra = '';
+  if (s.n != null) extra += `<div class="orig">Namensvorschlag: <code>${esc(g.autoName)}</code> · <button class="lnk" data-act="rn">zurücksetzen</button></div>`;
+  if (s.w != null) extra += `<div class="orig">Ursprünglicher Lagerplatz: <code>${g.autoWh ? esc(g.autoWh) : '—'}</code> · <button class="lnk" data-act="rw">zurücksetzen</button></div>`;
+  if (s.d && s.t) extra += `<div class="orig">Übertragen: ${fmtDate(s.t)}</div>`;
+  return `<div class="det">
+    <div class="dh"><span>${n} ${plural(n, 'Eintrag', 'Einträge')} in der Gruppe · ursprünglicher Name · Lagerplatz · Maschinen</span>
+      <span class="da">${hasOv ? '<button class="lnk" data-act="regroup">Automatische Gruppierung wiederherstellen</button>' : ''}<button class="btn-s" data-act="merge">Mit anderer Gruppe zusammenführen…</button></span>
+    </div>
+    <ul class="vars">${rows}</ul>${extra}
+  </div>`;
+}
+
+function itemEl(key) { return [...list.querySelectorAll('.item')].find(el => el.dataset.key === key); }
+function flash(key, act) {
+  const el = itemEl(key);
+  const b = el && el.querySelector(`[data-act="${act}"]`);
+  if (b) { b.classList.remove('flash'); void b.offsetWidth; b.classList.add('flash'); }
+}
+
+/* ---------- Toast ---------- */
+let toastT;
+function toast(html, undo) {
+  const el = $('#toast');
+  el.innerHTML = `<span class="tm">${html}</span>` + (undo ? '<button class="tu">Rückgängig</button>' : '');
+  if (undo) el.querySelector('.tu').onclick = () => { undo(); hideToast(); };
+  el.hidden = false;
+  requestAnimationFrame(() => el.classList.add('show'));
+  clearTimeout(toastT);
+  toastT = setTimeout(hideToast, undo ? 5000 : 1900);
+}
+function hideToast() {
+  const el = $('#toast');
+  el.classList.remove('show');
+  setTimeout(() => { if (!el.classList.contains('show')) el.hidden = true; }, 200);
+}
+
+/* ---------- Zwischenablage ---------- */
+async function copyText(t) {
+  try { await navigator.clipboard.writeText(t); return true; }
+  catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = t; ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
+    document.body.appendChild(ta); ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (_) {}
+    ta.remove();
+    return ok;
+  }
+}
+
+/* ---------- Aktionen ---------- */
+async function copyField(g, f) {
+  const text = f === 'n' ? nameOf(g) : whOf(g);
+  if (!(await copyText(text))) { toast('Kopieren fehlgeschlagen — Text markieren und manuell kopieren (Strg+C).'); return; }
+  const before = S.groups[g.key] ? JSON.stringify(S.groups[g.key]) : null;
+  const s = mut(g.key);
+  s[f === 'n' ? 'cn' : 'cw'] = true;
+  const wh = whOf(g);
+  let auto = false;
+  if (!s.d && s.cn && (s.cw || (!wh && S.ui.autoEmpty))) { s.d = true; s.t = Date.now(); auto = true; sticky.add(g.key); }
+  save(); render(); flash(g.key, f === 'n' ? 'cn' : 'cw');
+  if (auto) {
+    toast(`✓ Übertragen: <code>${esc(nameOf(g))}</code>`, () => {
+      if (before) S.groups[g.key] = JSON.parse(before); else delete S.groups[g.key];
+      save(); render();
+    });
+  } else {
+    const next = s.d ? '' : f === 'n' ? (wh ? (s.cw ? '' : ' · noch Lagerplatz') : ' · Lagerplatz ist leer') : (s.cn ? '' : ' · noch Name');
+    toast(`Kopiert: <code>${esc(text)}</code>${next}`);
+  }
+}
+
+function setDone(g, d) {
+  const s = mut(g.key);
+  if (d) { s.d = true; s.t = Date.now(); }
+  else { delete s.d; delete s.t; delete s.cn; delete s.cw; }
+  sticky.add(g.key); tidy(g.key); save(); render();
+}
+
+function startEdit(key, f) { editing = { key, f }; render(); }
+function cancelEdit() { editing = null; render(); }
+function commitEdit() {
+  if (!editing) return;
+  const { key, f } = editing;
+  editing = null;
+  const inp = list.querySelector('input.ed');
+  const g = BYKEY.get(key);
+  if (inp && g) {
+    const v = inp.value.replace(/\s+/g, ' ').trim();
+    const s = mut(key);
+    if (f === 'n') {
+      const before = nameOf(g);
+      if (!v || v === g.autoName) delete s.n; else s.n = v;
+      if (nameOf(g) !== before) delete s.cn;
+    } else {
+      const before = whOf(g);
+      if (v === g.autoWh) delete s.w; else s.w = v;
+      if (whOf(g) !== before) delete s.cw;
+    }
+    sticky.add(key); tidy(key); save();
+  }
+  render();
+}
+
+function snapshot() { return JSON.stringify({ g: S.groups, o: S.overrides, e: S.ui.expanded, c: S.ui.collapsed }); }
+function restoreSnap(snap) {
+  const x = JSON.parse(snap);
+  S.groups = x.g; S.overrides = x.o; S.ui.expanded = x.e; S.ui.collapsed = x.c;
+  rebuild(); save(); render();
+}
+
+function doMerge(src, dst) {
+  const gs = BYKEY.get(src), gd = BYKEY.get(dst);
+  mergeSrc = null;
+  if (!gs || !gd || src === dst) { render(); return; }
+  const snap = snapshot();
+  for (const v of gs.variants) {
+    if (autoKey(v.name) === dst) delete S.overrides[v.name]; else S.overrides[v.name] = dst;
+  }
+  delete S.groups[src];
+  setOpen(dst, true); sticky.add(dst);
+  rebuild(); save(); render();
+  const g = BYKEY.get(dst);
+  toast(`Zusammengeführt in <code>${esc(g ? nameOf(g) : dst)}</code>`, () => restoreSnap(snap));
+}
+
+function splitVariant(g, i) {
+  const v = g.variants[i];
+  if (!v) return;
+  const snap = snapshot();
+  const key = 'solo:' + v.name;
+  S.overrides[v.name] = key;
+  sticky.add(key); sticky.add(g.key);
+  rebuild(); save(); render();
+  toast(`Getrennt: <code>${esc(v.name)}</code>`, () => restoreSnap(snap));
+}
+
+function regroup(g) {
+  const snap = snapshot();
+  g.variants.forEach(v => {
+    delete S.overrides[v.name];
+    sticky.add(autoKey(v.name));
+  });
+  rebuild(); save(); render();
+  toast('Automatische Gruppierung wiederhergestellt', () => restoreSnap(snap));
+}
+
+/* ---------- Ereignisse: Liste ---------- */
+// während der Bearbeitung darf ein Klick auf einen Button nicht sofort den Fokus stehlen (sonst geht der erste Klick "verloren")
+list.addEventListener('mousedown', e => {
+  if (editing && !e.target.closest('input.ed') && e.target.closest('[data-act], .chk, .sug')) e.preventDefault();
+});
+
+list.addEventListener('click', e => {
+  const item = e.target.closest('.item');
+  if (!item) return;
+  const key = item.dataset.key;
+  if (mergeSrc) {
+    e.preventDefault();
+    if (key !== mergeSrc) doMerge(mergeSrc, key);
+    return;
+  }
+  const el = e.target.closest('[data-act]');
+  if (!el || el.matches('input')) return;
+  const act = el.dataset.act;
+  if (act === 'pick') {
+    const inp = list.querySelector('input.ed');
+    const item = sugItems[+el.dataset.i];
+    if (inp && item) {
+      if (item.type === 'prefix') { applyPrefix(inp, item); return; }
+      inp.value = item.text;
+      commitEdit();
+    }
+    return;
+  }
+  if (editing) commitEdit();
+  const g = BYKEY.get(key);
+  if (!g) return;
+  switch (act) {
+    case 'cn': copyField(g, 'n'); break;
+    case 'cw': copyField(g, 'w'); break;
+    case 'en': startEdit(key, 'n'); break;
+    case 'ew': startEdit(key, 'w'); break;
+    case 'tg': setOpen(key, !isOpen(key)); save(); render(); break;
+    case 'lp': {
+      const s = mut(key); s.w = el.dataset.v; delete s.cw;
+      if (s.w === g.autoWh) delete s.w;
+      save(); render(); toast(`Lagerplatz gesetzt: <code>${esc(el.dataset.v)}</code>`);
+      break;
+    }
+    case 'cv': {
+      const v = g.variants[+el.dataset.i];
+      if (v) copyText(v.name).then(ok => toast(ok ? `Kopiert: <code>${esc(v.name)}</code>` : 'Kopieren fehlgeschlagen.'));
+      break;
+    }
+    case 'split': splitVariant(g, +el.dataset.i); break;
+    case 'regroup': regroup(g); break;
+    case 'merge': mergeSrc = key; render(); break;
+    case 'rn': { const s = mut(key); delete s.n; delete s.cn; tidy(key); save(); render(); break; }
+    case 'rw': { const s = mut(key); delete s.w; delete s.cw; tidy(key); save(); render(); break; }
+  }
+});
+
+list.addEventListener('change', e => {
+  if (!e.target.matches('input[data-act="done"]')) return;
+  const key = e.target.closest('.item').dataset.key;
+  const checked = e.target.checked;
+  if (editing) commitEdit();
+  const g = BYKEY.get(key);
+  if (g) setDone(g, checked);
+});
+
+list.addEventListener('keydown', e => {
+  if (!e.target.matches('input.ed')) return;
+  const ac = !!e.target.dataset.ac;
+  if (ac && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) { e.preventDefault(); moveSug(e.target, e.key === 'ArrowDown' ? 1 : -1); }
+  else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (ac && sugIdx >= 0 && sugItems[sugIdx] != null) {
+      const item = sugItems[sugIdx];
+      if (item.type === 'prefix') { applyPrefix(e.target, item); return; }
+      e.target.value = item.text;
+    }
+    commitEdit();
+  }
+  else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); cancelEdit(); }
+});
+list.addEventListener('input', e => {
+  if (e.target.matches('input.ed[data-ac]')) updateSug(e.target);
+});
+list.addEventListener('focusout', e => {
+  if (editing && e.target.matches('input.ed')) commitEdit();
+});
+
+/* ---------- Ereignisse: Kopfzeile ---------- */
+const q = $('#q');
+q.value = S.ui.q;
+q.addEventListener('input', () => { S.ui.q = q.value; sticky.clear(); save(); render(); });
+
+$('#seg').addEventListener('click', e => {
+  const b = e.target.closest('button[data-f]');
+  if (!b) return;
+  S.ui.filter = b.dataset.f; sticky.clear(); save(); render();
+});
+$('#chips').addEventListener('click', e => {
+  const b = e.target.closest('button[data-m]');
+  if (!b) return;
+  const m = b.dataset.m, i = S.ui.machines.indexOf(m);
+  if (i < 0) S.ui.machines.push(m); else S.ui.machines.splice(i, 1);
+  sticky.clear(); save(); render();
+});
+$('#expandAll').addEventListener('change', e => {
+  S.ui.expandAll = e.target.checked; S.ui.collapsed = []; if (!S.ui.expandAll) S.ui.expanded = [];
+  save(); render();
+});
+$('#autoEmpty').addEventListener('change', e => { S.ui.autoEmpty = e.target.checked; save(); });
+$('#mCancel').addEventListener('click', () => { mergeSrc = null; render(); });
+
+const menu = $('#menu');
+document.addEventListener('click', e => { if (menu.open && !menu.contains(e.target)) menu.open = false; });
+
+function download(name, text, type) {
+  const url = URL.createObjectURL(new Blob([text], { type }));
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+const today = () => new Date().toISOString().slice(0, 10);
+const csvCell = v => '"' + String(v).replace(/"/g, '""') + '"';
+
+async function readFileText(f) {
+  const buf = await f.arrayBuffer();
+  let t = new TextDecoder('utf-8').decode(buf);
+  if (t.includes('�')) { try { t = new TextDecoder('windows-1250').decode(buf); } catch (e) {} }
+  return t;
+}
+
+menu.addEventListener('click', e => {
+  const b = e.target.closest('button[data-m]');
+  if (!b) return;
+  menu.open = false;
+  switch (b.dataset.m) {
+    case 'export': {
+      const lines = [['Name', 'Lagerplatz', 'Maschinen', 'Übertragen', 'Ursprüngliche Einträge'].map(csvCell).join(';')];
+      GROUPS.forEach(g => lines.push([nameOf(g), whOf(g), g.machines.map(short).join(', '), isDone(g) ? 'ja' : 'nein', g.variants.map(v => v.name).join(' | ')].map(csvCell).join(';')));
+      download(`werkzeuge-erp-${today()}.csv`, '﻿' + lines.join('\r\n'), 'text/csv;charset=utf-8');
+      break;
+    }
+    case 'backup':
+      download(`werkzeuge-erp-sicherung-${today()}.json`, JSON.stringify({ app: 'werkzeuge-erp', savedAt: new Date().toISOString(), state: S }, null, 1), 'application/json');
+      break;
+    case 'restore': $('#fileJson').click(); break;
+    case 'import': $('#fileCsv').click(); break;
+    case 'embedded':
+      if (confirm('Eingebettete Werkzeugliste wiederherstellen? Markierungen und Änderungen bleiben für Werkzeuge erhalten, die in beiden Listen vorkommen.')) {
+        S.csv = null; sticky.clear(); editing = null; rebuild(); save(); render(); toast('Eingebettete Liste wiederhergestellt');
+      }
+      break;
+    case 'reset':
+      if (confirm('Gesamten Fortschritt löschen?\n\nDie Markierungen "übertragen", manuell bearbeitete Namen und Lagerplätze sowie manuelle Gruppenzusammenführungen werden gelöscht.')) {
+        const snap = snapshot();
+        S.groups = {}; S.overrides = {}; S.ui.expanded = []; S.ui.collapsed = [];
+        sticky.clear(); editing = null; mergeSrc = null;
+        rebuild(); save(); render();
+        toast('Fortschritt gelöscht', () => restoreSnap(snap));
+      }
+      break;
+  }
+});
+
+$('#fileCsv').addEventListener('change', async e => {
+  const f = e.target.files[0];
+  e.target.value = '';
+  if (!f) return;
+  const text = await readFileText(f);
+  const rows = parseCSV(text);
+  if (!rows.length) { alert('In dieser Datei wurden keine Werkzeuge gefunden.'); return; }
+  S.csv = text; sticky.clear(); editing = null; mergeSrc = null;
+  rebuild(); save(); render();
+  toast(`${rows.length} Einträge aus <code>${esc(f.name)}</code> geladen — Fortschritt für gleiche Werkzeuge beibehalten`);
+});
+
+$('#fileJson').addEventListener('change', async e => {
+  const f = e.target.files[0];
+  e.target.value = '';
+  if (!f) return;
+  try {
+    const obj = JSON.parse(await readFileText(f));
+    const state = obj && (obj.state || obj);
+    if (!state || typeof state.groups !== 'object') throw new Error('format');
+    if (!confirm('Sicherungskopie laden? Der aktuelle Fortschritt wird ersetzt.')) return;
+    S = defaults(state); sticky.clear(); editing = null; mergeSrc = null;
+    q.value = S.ui.q;
+    rebuild(); save(); render();
+    toast('Sicherungskopie geladen');
+  } catch (err) {
+    alert('Dies ist keine gültige Sicherungskopie.');
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (mergeSrc) { mergeSrc = null; render(); }
+    else if (menu.open) menu.open = false;
+  } else if (e.key === '/' && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) {
+    e.preventDefault(); q.focus(); q.select();
+  }
+});
+
+// Änderung in einem anderen Tab mit derselben Seite
+window.addEventListener('storage', e => {
+  if (e.key !== LS) return;
+  S = load(); editing = null; mergeSrc = null; q.value = S.ui.q;
+  rebuild(); render();
+});
+
+let scrollT;
+window.addEventListener('scroll', () => {
+  clearTimeout(scrollT);
+  scrollT = setTimeout(() => { S.ui.scroll = Math.round(window.scrollY); save(); }, 250);
+}, { passive: true });
+window.addEventListener('beforeunload', () => { S.ui.scroll = Math.round(window.scrollY); save(); });
+
+/* ---------- Start ---------- */
+rebuild();
+render();
+requestAnimationFrame(() => window.scrollTo(0, S.ui.scroll));
+})();
+</script>
+</div>
+<script>
+(function(){
+  var HASH = "3957c3d5a21cd9a059e5a6764f4f27992fc52c6aba477d1626e51ffb3783d389";
+  var gate = document.getElementById('passGate');
+  var content = document.getElementById('appContent');
+  var form = document.getElementById('passForm');
+  var input = document.getElementById('passInput');
+  var err = document.getElementById('passError');
+
+  function sha256(str) {
+    var enc = new TextEncoder().encode(str);
+    return crypto.subtle.digest('SHA-256', enc).then(function(buf){
+      return Array.from(new Uint8Array(buf)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+    });
+  }
+
+  if (sessionStorage.getItem('aerpAuth') === HASH) {
+    gate.hidden = true;
+    content.hidden = false;
+  } else {
+    input.focus();
+  }
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    sha256(input.value).then(function(h){
+      if (h === HASH) {
+        sessionStorage.setItem('aerpAuth', HASH);
+        gate.hidden = true;
+        content.hidden = false;
+      } else {
+        err.textContent = 'Pogrešna šifra.';
+        input.value = '';
+        input.focus();
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>
