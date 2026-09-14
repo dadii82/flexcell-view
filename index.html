@@ -143,7 +143,7 @@ var cards=document.getElementById('cards'),sumEl=document.getElementById('sum'),
 // Postavke se cuvaju samo na ovom mobitelu. Preko ?repo=&path=&branch= se mogu i predati linkom
 // (token se linkom NE predaje).
 function loadCfg(){
-  var c={repo:'',path:'stanje.json',branch:'main',token:''};
+  var c={repo:'dadii82/flexcell-stanje',path:'stanje.json',branch:'main',token:''};
   try{var raw=localStorage.getItem(CFG_KEY);if(raw){var j=JSON.parse(raw);if(j&&typeof j==='object')for(var k in c)if(j[k])c[k]=String(j[k])}}catch(e){}
   ['repo','path','branch'].forEach(function(k){if(q.get(k))c[k]=String(q.get(k))});
   return c;
