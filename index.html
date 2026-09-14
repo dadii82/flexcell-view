@@ -13,7 +13,8 @@ header{display:flex;align-items:center;gap:8px;margin:2px 2px 12px}
 h1{margin:0;font-size:17px;letter-spacing:.02em;flex:1}
 #age{font-size:12px;color:var(--dim);white-space:nowrap}
 #age.stale{color:var(--bad);font-weight:700}
-.gear{appearance:none;border:1px solid var(--line);background:#0b1220;color:var(--txt);font-size:15px;line-height:1;padding:6px 9px;border-radius:9px}
+.gear,.lang{appearance:none;border:1px solid var(--line);background:#0b1220;color:var(--txt);font-size:15px;line-height:1;padding:6px 9px;border-radius:9px}
+.lang{font-size:12px;font-weight:800;letter-spacing:.03em}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 13px;margin-bottom:10px}
 .top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .mach{font-size:20px;font-weight:800;letter-spacing:.03em}
@@ -47,15 +48,15 @@ footer{display:flex;align-items:center;gap:10px;margin-top:14px}
 </style>
 </head>
 <body>
-<header><h1>Flexcell - stanje</h1><div id="age">ucitavam...</div><button id="gear" class="gear" title="Postavke">&#9881;</button></header>
+<header><h1 id="h1Title">Flexcell - stanje</h1><div id="age">ucitavam...</div><button id="langBtn" class="lang" title="Jezik / Sprache">DE</button><button id="gear" class="gear" title="Postavke">&#9881;</button></header>
 <div id="setup" class="card" hidden>
-  <div style="font-weight:700;margin-bottom:2px">Postavke</div>
-  <label>Privatni repo s podacima (korisnik/repo)</label><input id="cfgRepo" placeholder="korisnik/flexcell-stanje" autocapitalize="off" autocorrect="off" spellcheck="false">
-  <label>Datoteka</label><input id="cfgPath" placeholder="stanje.json" autocapitalize="off" autocorrect="off" spellcheck="false">
-  <label>Branch</label><input id="cfgBranch" placeholder="main" autocapitalize="off" autocorrect="off" spellcheck="false">
-  <label>Token samo za citanje</label><input id="cfgToken" type="password" placeholder="github_pat_..." autocapitalize="off" autocorrect="off" spellcheck="false">
+  <div id="setupHeading" style="font-weight:700;margin-bottom:2px">Postavke</div>
+  <label id="lblRepo">Privatni repo s podacima (korisnik/repo)</label><input id="cfgRepo" placeholder="korisnik/flexcell-stanje" autocapitalize="off" autocorrect="off" spellcheck="false">
+  <label id="lblPath">Datoteka</label><input id="cfgPath" placeholder="stanje.json" autocapitalize="off" autocorrect="off" spellcheck="false">
+  <label id="lblBranch">Branch</label><input id="cfgBranch" placeholder="main" autocapitalize="off" autocorrect="off" spellcheck="false">
+  <label id="lblToken">Token samo za citanje</label><input id="cfgToken" type="password" placeholder="github_pat_..." autocapitalize="off" autocorrect="off" spellcheck="false">
   <div class="row"><button id="cfgSave" class="pri">Spremi</button><button id="cfgClose">Zatvori</button></div>
-  <div class="hint">Podaci su u <b>privatnom</b> repou, pa ih ova stranica cita preko GitHub API-ja i za to treba token. Na GitHubu: <code>Settings &rarr; Developer settings &rarr; Fine-grained tokens</code>, pristup samo tom repou, pravo <code>Contents: Read-only</code>. Token ostaje spremljen samo na ovom mobitelu.</div>
+  <div id="setupHint" class="hint">Podaci su u <b>privatnom</b> repou, pa ih ova stranica cita preko GitHub API-ja i za to treba token. Na GitHubu: <code>Settings &rarr; Developer settings &rarr; Fine-grained tokens</code>, pristup samo tom repou, pravo <code>Contents: Read-only</code>. Token ostaje spremljen samo na ovom mobitelu.</div>
 </div>
 <div id="cards"></div>
 <div id="sum" class="sum"></div>
@@ -63,8 +64,81 @@ footer{display:flex;align-items:center;gap:10px;margin-top:14px}
 <footer><button id="reload">Osvjezi</button><span id="src" style="font-size:11px;color:var(--dim)"></span></footer>
 <script>
 (function(){
+var I18N={
+  hr:{
+    pageTitle:'Flexcell - stanje',
+    loading:'ucitavam...',
+    gearTitle:'Postavke',
+    setupHeading:'Postavke',
+    lblRepo:'Privatni repo s podacima (korisnik/repo)',
+    lblPath:'Datoteka',
+    lblBranch:'Branch',
+    lblToken:'Token samo za citanje',
+    btnSave:'Spremi',
+    btnClose:'Zatvori',
+    setupHint:'Podaci su u <b>privatnom</b> repou, pa ih ova stranica cita preko GitHub API-ja i za to treba token. Na GitHubu: <code>Settings &rarr; Developer settings &rarr; Fine-grained tokens</code>, pristup samo tom repou, pravo <code>Contents: Read-only</code>. Token ostaje spremljen samo na ovom mobitelu.',
+    btnReload:'Osvjezi',
+    noMachines:'Nema podataka o strojevima.',
+    kvPieces:'komada',
+    kvSecPerPart:'s/kom',
+    kvEta:'zavrsetak',
+    kvLastPiece:'zadnji komad',
+    kvCounter:'brojac stroja',
+    next:'slijedi',
+    planned:'planirano',
+    unplanned:'neplanirano',
+    csv:'CSV',
+    version:'verzija',
+    now:'sada',
+    minSuffix:'min',
+    qtySuffix:'kom',
+    status:{rad:'rad',podesavanje:'podesavanje',pauza:'pauza',stoj:'stoj',prazno:'prazno'},
+    langBtn:'DE',
+    errTokenRejected:function(s){return 'token nije prihvacen (HTTP '+s+') - provjeri postavke'},
+    errNoFile:'nema datoteke ili token nema pristup repou (404)',
+    errHttp:function(s){return 'HTTP '+s},
+    errBadJson:'neispravan JSON',
+    errFetchPrefix:'Ne mogu dohvatiti podatke: '
+  },
+  de:{
+    pageTitle:'Flexcell - Status',
+    loading:'lade...',
+    gearTitle:'Einstellungen',
+    setupHeading:'Einstellungen',
+    lblRepo:'Privates Repo mit Daten (Benutzer/Repo)',
+    lblPath:'Datei',
+    lblBranch:'Branch',
+    lblToken:'Nur-Lese-Token',
+    btnSave:'Speichern',
+    btnClose:'Schließen',
+    setupHint:'Die Daten liegen in einem <b>privaten</b> Repo, deshalb liest diese Seite sie über die GitHub-API - dafür wird ein Token benötigt. Auf GitHub: <code>Settings &rarr; Developer settings &rarr; Fine-grained tokens</code>, Zugriff nur auf dieses Repo, Recht <code>Contents: Read-only</code>. Der Token bleibt nur auf diesem Handy gespeichert.',
+    btnReload:'Aktualisieren',
+    noMachines:'Keine Maschinendaten vorhanden.',
+    kvPieces:'Stück',
+    kvSecPerPart:'s/Stk',
+    kvEta:'Fertig',
+    kvLastPiece:'letztes Teil',
+    kvCounter:'Maschinenzähler',
+    next:'als nächstes',
+    planned:'geplant',
+    unplanned:'ungeplant',
+    csv:'CSV',
+    version:'Version',
+    now:'jetzt',
+    minSuffix:'Min',
+    qtySuffix:'Stk',
+    status:{rad:'Läuft',podesavanje:'Einrichtung',pauza:'Pause',stoj:'Gestoppt',prazno:'leer'},
+    langBtn:'HR',
+    errTokenRejected:function(s){return 'Token nicht akzeptiert (HTTP '+s+') - Einstellungen prüfen'},
+    errNoFile:'Datei fehlt oder Token hat keinen Zugriff auf das Repo (404)',
+    errHttp:function(s){return 'HTTP '+s},
+    errBadJson:'ungültiges JSON',
+    errFetchPrefix:'Daten können nicht abgerufen werden: '
+  }
+};
 var q=new URLSearchParams(location.search);
 var CFG_KEY='flexcell-status-cfg';
+var LANG_KEY='flexcell-status-lang';
 var cards=document.getElementById('cards'),sumEl=document.getElementById('sum'),ageEl=document.getElementById('age'),errEl=document.getElementById('err'),srcEl=document.getElementById('src'),setupEl=document.getElementById('setup');
 // Postavke se cuvaju samo na ovom mobitelu. Preko ?repo=&path=&branch= se mogu i predati linkom
 // (token se linkom NE predaje).
@@ -75,41 +149,72 @@ function loadCfg(){
   return c;
 }
 function saveCfg(c){try{localStorage.setItem(CFG_KEY,JSON.stringify(c))}catch(e){}}
+function loadLang(){
+  var l=q.get('lang');
+  if(l==='hr'||l==='de')return l;
+  try{var raw=localStorage.getItem(LANG_KEY);if(raw==='hr'||raw==='de')return raw}catch(e){}
+  return 'hr';
+}
+function saveLang(l){try{localStorage.setItem(LANG_KEY,l)}catch(e){}}
 var cfg=loadCfg();
+var lang=loadLang();
+var lastData=null;
 var SRC=q.get('src')||'';
+function t(){return I18N[lang]}
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return c==='&'?'&amp;':c==='<'?'&lt;':c==='>'?'&gt;':'&quot;'})}
 function statusClass(s){s=String(s||'');return s==='rad'?'b-rad':s==='podesavanje'?'b-pod':s==='pauza'?'b-pau':s==='stoj'?'b-stoj':'b-prazno'}
+function statusLabel(s){var m=t().status;return (s&&m[s])?m[s]:m.prazno}
 function num(v){return (v===0||v)?v:'-'}
 function slug(v){return String(v||'').trim().replace(/^https?:\/\/github\.com\//i,'').replace(/\.git$/i,'').replace(/^\/+|\/+$/g,'')}
+function applyStaticText(){
+  var d=t();
+  document.title=d.pageTitle;
+  document.documentElement.lang=lang;
+  document.getElementById('h1Title').textContent=d.pageTitle;
+  document.getElementById('gear').title=d.gearTitle;
+  document.getElementById('setupHeading').textContent=d.setupHeading;
+  document.getElementById('lblRepo').textContent=d.lblRepo;
+  document.getElementById('lblPath').textContent=d.lblPath;
+  document.getElementById('lblBranch').textContent=d.lblBranch;
+  document.getElementById('lblToken').textContent=d.lblToken;
+  document.getElementById('cfgSave').textContent=d.btnSave;
+  document.getElementById('cfgClose').textContent=d.btnClose;
+  document.getElementById('setupHint').innerHTML=d.setupHint;
+  document.getElementById('reload').textContent=d.btnReload;
+  document.getElementById('langBtn').textContent=d.langBtn;
+  if(!lastData)ageEl.textContent=d.loading;
+}
 function render(d){
+  lastData=d;
+  var dict=t();
   var ms=(d.machines||[]);
   cards.innerHTML=ms.map(function(m){
     var pct=Math.max(0,Math.min(100,Number(m.pct)||0));
     var kv=[];
-    if(m.done!=null&&m.total!=null)kv.push('<span>komada <b>'+num(m.done)+' / '+num(m.total)+'</b></span>');
-    if(m.secPerPart)kv.push('<span>s/kom <b>'+m.secPerPart+'</b></span>');
-    if(m.etaText)kv.push('<span>zavrsetak <b>'+esc(m.etaText)+'</b></span>');
-    if(m.lastPieceText)kv.push('<span>zadnji komad <b>'+esc(m.lastPieceText)+'</b></span>');
-    if(m.counter!=null)kv.push('<span>brojac stroja <b>'+num(m.counter)+'</b></span>');
-    var nx=(m.next||[]).map(function(n){return esc(n.program)+(n.ip?' / '+esc(n.ip):'')+(n.qty?' ('+n.qty+' kom)':'')}).join(' &rarr; ');
+    if(m.done!=null&&m.total!=null)kv.push('<span>'+dict.kvPieces+' <b>'+num(m.done)+' / '+num(m.total)+'</b></span>');
+    if(m.secPerPart)kv.push('<span>'+dict.kvSecPerPart+' <b>'+m.secPerPart+'</b></span>');
+    if(m.etaText)kv.push('<span>'+dict.kvEta+' <b>'+esc(m.etaText)+'</b></span>');
+    if(m.lastPieceText)kv.push('<span>'+dict.kvLastPiece+' <b>'+esc(m.lastPieceText)+'</b></span>');
+    if(m.counter!=null)kv.push('<span>'+dict.kvCounter+' <b>'+num(m.counter)+'</b></span>');
+    var nx=(m.next||[]).map(function(n){return esc(n.program)+(n.ip?' / '+esc(n.ip):'')+(n.qty?' ('+n.qty+' '+dict.qtySuffix+')':'')}).join(' &rarr; ');
     return '<div class="card">'
       +'<div class="top"><span class="mach">'+esc(m.machine)+'</span>'
       +'<span><span class="prog">'+esc(m.program||'-')+'</span> <span class="ip">'+esc(m.ip||'')+'</span></span>'
-      +'<span class="badge '+statusClass(m.status)+'">'+esc(m.status||'prazno')+'</span></div>'
+      +'<span class="badge '+statusClass(m.status)+'">'+esc(statusLabel(m.status))+'</span></div>'
       +(m.name?'<div class="ip" style="margin:-4px 0 6px">'+esc(m.name)+'</div>':'')
       +'<div class="bar"><i style="width:'+pct+'%"></i><span>'+pct+' %</span></div>'
       +'<div class="kv">'+kv.join('')+'</div>'
-      +(nx?'<div class="next">slijedi: <b>'+nx+'</b></div>':'')
+      +(nx?'<div class="next">'+dict.next+': <b>'+nx+'</b></div>':'')
       +'</div>';
-  }).join('')||'<div class="card">Nema podataka o strojevima.</div>';
+  }).join('')||'<div class="card">'+dict.noMachines+'</div>';
   var p=d.plan||{},s=[];
-  if(p.planned!=null)s.push('<span>planirano <b>'+p.planned+'</b></span>');
-  if(p.unplanned!=null)s.push('<span>neplanirano <b>'+p.unplanned+'</b></span>');
-  if(p.csv)s.push('<span>CSV <b>'+esc(p.csv)+'</b>'+(p.csvText?' ('+esc(p.csvText)+')':'')+'</span>');
-  if(d.app)s.push('<span>verzija <b>'+esc(d.app)+'</b></span>');
+  if(p.planned!=null)s.push('<span>'+dict.planned+' <b>'+p.planned+'</b></span>');
+  if(p.unplanned!=null)s.push('<span>'+dict.unplanned+' <b>'+p.unplanned+'</b></span>');
+  if(p.csv)s.push('<span>'+dict.csv+' <b>'+esc(p.csv)+'</b>'+(p.csvText?' ('+esc(p.csvText)+')':'')+'</span>');
+  if(d.app)s.push('<span>'+dict.version+' <b>'+esc(d.app)+'</b></span>');
   sumEl.innerHTML=s.join('');
   var at=Date.parse(d.at||'')||0,min=at?Math.round((Date.now()-at)/60000):null;
-  ageEl.textContent=(d.atText||'')+(min!=null?'  ('+(min<1?'sada':min+' min')+')':'');
+  ageEl.textContent=(d.atText||'')+(min!=null?'  ('+(min<1?dict.now:min+' '+dict.minSuffix)+')':'');
   ageEl.className=(min!=null&&min>15)?'stale':'';
 }
 function fail(msg){errEl.textContent=msg}
@@ -130,15 +235,16 @@ function load(){
     srcEl.textContent=f;
   }
   fetch(url,opt).then(function(r){
-    if(r.status===401||r.status===403)throw new Error('token nije prihvacen (HTTP '+r.status+') - provjeri postavke');
-    if(r.status===404)throw new Error('nema datoteke ili token nema pristup repou (404)');
-    if(!r.ok)throw new Error('HTTP '+r.status);
+    var dict=t();
+    if(r.status===401||r.status===403)throw new Error(dict.errTokenRejected(r.status));
+    if(r.status===404)throw new Error(dict.errNoFile);
+    if(!r.ok)throw new Error(dict.errHttp(r.status));
     return r.text();
-  }).then(function(t){
-    var d;try{d=JSON.parse(t)}catch(e){throw new Error('neispravan JSON')}
+  }).then(function(txt){
+    var d;try{d=JSON.parse(txt)}catch(e){throw new Error(t().errBadJson)}
     render(d);
   }).catch(function(e){
-    fail('Ne mogu dohvatiti podatke: '+(e&&e.message||e));
+    fail(t().errFetchPrefix+(e&&e.message||e));
     if(!slug(cfg.repo)||!String(cfg.token||'').trim())openSetup();
   });
 }
@@ -162,9 +268,16 @@ document.getElementById('cfgSave').addEventListener('click',function(){
   setupEl.hidden=true;
   load();
 });
+document.getElementById('langBtn').addEventListener('click',function(){
+  lang=(lang==='hr')?'de':'hr';
+  saveLang(lang);
+  applyStaticText();
+  if(lastData)render(lastData);
+});
 document.getElementById('reload').addEventListener('click',load);
 document.addEventListener('visibilitychange',function(){if(!document.hidden)load()});
 setInterval(load,30000);
+applyStaticText();
 if(!slug(cfg.repo)&&!SRC)openSetup();
 load();
 })();
