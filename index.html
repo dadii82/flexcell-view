@@ -51,12 +51,12 @@ footer{display:flex;align-items:center;gap:10px;margin-top:14px}
 <header><h1 id="h1Title">Flexcell - stanje</h1><div id="age">ucitavam...</div><button id="langBtn" class="lang" title="Jezik / Sprache">DE</button><button id="gear" class="gear" title="Postavke">&#9881;</button></header>
 <div id="setup" class="card" hidden>
   <div id="setupHeading" style="font-weight:700;margin-bottom:2px">Postavke</div>
-  <label id="lblRepo">Privatni repo s podacima (korisnik/repo)</label><input id="cfgRepo" placeholder="korisnik/flexcell-stanje" autocapitalize="off" autocorrect="off" spellcheck="false">
-  <label id="lblPath">Datoteka</label><input id="cfgPath" placeholder="stanje.json" autocapitalize="off" autocorrect="off" spellcheck="false">
-  <label id="lblBranch">Branch</label><input id="cfgBranch" placeholder="main" autocapitalize="off" autocorrect="off" spellcheck="false">
+  <label id="lblRepo" hidden>Privatni repo s podacima (korisnik/repo)</label><input id="cfgRepo" placeholder="korisnik/flexcell-stanje" autocapitalize="off" autocorrect="off" spellcheck="false" hidden>
+  <label id="lblPath" hidden>Datoteka</label><input id="cfgPath" placeholder="stanje.json" autocapitalize="off" autocorrect="off" spellcheck="false" hidden>
+  <label id="lblBranch" hidden>Branch</label><input id="cfgBranch" placeholder="main" autocapitalize="off" autocorrect="off" spellcheck="false" hidden>
   <label id="lblToken">Token samo za citanje</label><input id="cfgToken" type="password" placeholder="github_pat_..." autocapitalize="off" autocorrect="off" spellcheck="false">
-  <div class="row"><button id="cfgSave" class="pri">Spremi</button><button id="cfgClose">Zatvori</button></div>
-  <div id="setupHint" class="hint">Podaci su u <b>privatnom</b> repou, pa ih ova stranica cita preko GitHub API-ja i za to treba token. Na GitHubu: <code>Settings &rarr; Developer settings &rarr; Fine-grained tokens</code>, pristup samo tom repou, pravo <code>Contents: Read-only</code>. Token ostaje spremljen samo na ovom mobitelu.</div>
+  <div class="row"><button id="cfgSave" class="pri">Spremi</button></div>
+  <div id="setupHint" class="hint" hidden>Podaci su u <b>privatnom</b> repou, pa ih ova stranica cita preko GitHub API-ja i za to treba token. Na GitHubu: <code>Settings &rarr; Developer settings &rarr; Fine-grained tokens</code>, pristup samo tom repou, pravo <code>Contents: Read-only</code>. Token ostaje spremljen samo na ovom mobitelu.</div>
 </div>
 <div id="cards"></div>
 <div id="sum" class="sum"></div>
@@ -178,8 +178,6 @@ function applyStaticText(){
   document.getElementById('lblBranch').textContent=d.lblBranch;
   document.getElementById('lblToken').textContent=d.lblToken;
   document.getElementById('cfgSave').textContent=d.btnSave;
-  document.getElementById('cfgClose').textContent=d.btnClose;
-  document.getElementById('setupHint').innerHTML=d.setupHint;
   document.getElementById('reload').textContent=d.btnReload;
   document.getElementById('langBtn').textContent=d.langBtn;
   if(!lastData)ageEl.textContent=d.loading;
@@ -256,7 +254,6 @@ function openSetup(){
   setupEl.hidden=false;
 }
 document.getElementById('gear').addEventListener('click',function(){setupEl.hidden?openSetup():setupEl.hidden=true});
-document.getElementById('cfgClose').addEventListener('click',function(){setupEl.hidden=true});
 document.getElementById('cfgSave').addEventListener('click',function(){
   cfg={
     repo:slug(document.getElementById('cfgRepo').value),
