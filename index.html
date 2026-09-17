@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0f172a">
+<!-- Verziju upisuje aplikacija pri objavi; po njoj zna je li objavljena stranica starija od njene. -->
+<meta name="flexcell-page-version" content="2.5.13">
 <title>Flexcell - stanje</title>
 <style>
 :root{--bg:#0f172a;--card:#1e293b;--line:#334155;--txt:#e2e8f0;--dim:#94a3b8;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--idle:#64748b}
@@ -33,6 +35,7 @@ h1{margin:0;font-size:17px;letter-spacing:.02em;flex:1}
 .kv b{color:var(--txt);font-weight:700}
 .next{margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);font-size:12px;color:var(--dim)}
 .next b{color:#cbd5e1}
+.stalenote{margin:-2px 0 6px;font-size:12px;font-weight:700;color:var(--warn)}
 .sum{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--dim);padding:2px 4px}
 .sum b{color:var(--txt)}
 button{appearance:none;border:1px solid var(--line);background:#0b1220;color:var(--txt);font:600 13px inherit;padding:9px 14px;border-radius:10px}
@@ -92,6 +95,7 @@ var I18N={
     now:'sada',
     minSuffix:'min',
     qtySuffix:'kom',
+    staleNote:function(age){return 'bez svjezih podataka'+(age?' '+age:'')+' - aplikacija ne cita log stroja'},
     status:{rad:'rad',podesavanje:'podesavanje',pauza:'pauza',stoj:'stoj',prazno:'prazno'},
     langBtn:'DE',
     errTokenRejected:function(s){return 'token nije prihvacen (HTTP '+s+') - provjeri postavke'},
@@ -127,6 +131,7 @@ var I18N={
     now:'jetzt',
     minSuffix:'Min',
     qtySuffix:'Stk',
+    staleNote:function(age){return 'keine aktuellen Daten'+(age?' seit '+age:'')+' - App liest das Maschinenlog nicht'},
     status:{rad:'Läuft',podesavanje:'Einrichtung',pauza:'Pause',stoj:'Gestoppt',prazno:'leer'},
     langBtn:'HR',
     errTokenRejected:function(s){return 'Token nicht akzeptiert (HTTP '+s+') - Einstellungen prüfen'},
@@ -182,6 +187,12 @@ function applyStaticText(){
   document.getElementById('langBtn').textContent=d.langBtn;
   if(!lastData)ageEl.textContent=d.loading;
 }
+// Aplikacija salje staleMin (minute, -1 = nepoznato) pa se napomena prevodi ovdje, ne u aplikaciji.
+function staleText(m){
+  var min=Number(m.staleMin),age='';
+  if(isFinite(min)&&min>=0)age=min>=120?Math.round(min/60)+' h':min+' min';
+  return t().staleNote(age);
+}
 function render(d){
   lastData=d;
   var dict=t();
@@ -199,6 +210,7 @@ function render(d){
       +'<div class="top"><span class="mach">'+esc(m.machine)+'</span>'
       +'<span><span class="prog">'+esc(m.program||'-')+'</span> <span class="ip">'+esc(m.ip||'')+'</span></span>'
       +'<span class="badge '+statusClass(m.status)+'">'+esc(statusLabel(m.status))+'</span></div>'
+      +(m.stale?'<div class="stalenote">'+esc(staleText(m))+'</div>':'')
       +(m.name?'<div class="ip" style="margin:-4px 0 6px">'+esc(m.name)+'</div>':'')
       +'<div class="bar"><i style="width:'+pct+'%"></i><span>'+pct+' %</span></div>'
       +'<div class="kv">'+kv.join('')+'</div>'
