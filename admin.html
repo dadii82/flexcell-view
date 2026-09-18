@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="hr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<!-- Admin stranica: kao user stranica (mobile-status.html), ali s trazenjem analize i pregledima. Aplikacija je NE objavljuje
+     automatski (auto-objava dira samo cfg.page = index.html), pa se gura rucno preko gh/GitHuba. -->
+<meta name="flexcell-page-version" content="2.5.18">
+<title>Flexcell - admin</title>
+<style>
+:root{--bg:#0f172a;--card:#1e293b;--line:#334155;--txt:#e2e8f0;--dim:#94a3b8;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--idle:#64748b}
+*{box-sizing:border-box}
+body{margin:0;padding:12px 12px 28px;background:var(--bg);color:var(--txt);font:15px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+header{display:flex;align-items:center;gap:8px;margin:2px 2px 12px}
+h1{margin:0;font-size:17px;letter-spacing:.02em;flex:1}
+#age{font-size:12px;color:var(--dim);white-space:nowrap}
+#age.stale{color:var(--bad);font-weight:700}
+.gear,.lang{appearance:none;border:1px solid var(--line);background:#0b1220;color:var(--txt);font-size:15px;line-height:1;padding:6px 9px;border-radius:9px}
+.lang{font-size:12px;font-weight:800;letter-spacing:.03em}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 13px;margin-bottom:10px}
+.top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.mach{font-size:20px;font-weight:800;letter-spacing:.03em}
+.badge{margin-left:auto;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;padding:3px 9px;border-radius:999px;border:1px solid}
+.b-rad{color:#bbf7d0;border-color:#166534;background:#14532d}
+.b-pod{color:#fde68a;border-color:#92400e;background:#78350f}
+.b-pau{color:#fed7aa;border-color:#9a3412;background:#7c2d12}
+.b-stoj{color:#e2e8f0;border-color:#475569;background:#334155}
+.b-prazno{color:#cbd5e1;border-color:#475569;background:#1e293b}
+.prog{font-size:15px;font-weight:700}
+.ip{color:var(--dim);font-size:13px}
+.bar{position:relative;height:22px;border-radius:999px;background:#0b1220;border:1px solid var(--line);overflow:hidden;margin:9px 0 7px}
+.bar i{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:linear-gradient(90deg,#0ea5e9,#22c55e);transition:width .4s ease}
+.bar span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.kv{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:13px;color:var(--dim)}
+.kv b{color:var(--txt);font-weight:700}
+.next{margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);font-size:12px;color:var(--dim)}
+.next b{color:#cbd5e1}
+.stalenote{margin:-2px 0 6px;font-size:12px;font-weight:700;color:var(--warn)}
+.pimg{margin:6px 0 2px;text-align:center}
+.pimg img{max-width:100%;max-height:230px;border-radius:10px;border:1px solid var(--line);background:#0b1220;cursor:zoom-in}
+.pimg.zoom img{max-height:none;cursor:zoom-out}
+.sum{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--dim);padding:2px 4px}
+.sum b{color:var(--txt)}
+button{appearance:none;border:1px solid var(--line);background:#0b1220;color:var(--txt);font:600 13px inherit;padding:9px 14px;border-radius:10px}
+button.pri{background:#1d4ed8;border-color:#1d4ed8;color:#fff}
+button[disabled]{opacity:.5}
+select{appearance:none;border:1px solid var(--line);background:#0b1220;color:var(--txt);font:600 13px inherit;padding:9px 10px;border-radius:10px}
+.anahead{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+.anastate{margin-left:auto;font-size:12px;color:var(--dim);text-align:right}
+.anastate.work{color:var(--warn);font-weight:700}
+.anastate.ok{color:var(--ok);font-weight:700}
+.anastate.bad{color:var(--bad);font-weight:700}
+.anarow{display:flex;gap:8px;align-items:center}
+.anahint{font-size:12px;color:var(--dim);margin-top:9px;line-height:1.45}
+.analist{margin-top:10px;border-top:1px dashed var(--line);padding-top:6px}
+.anaitem{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13px;border-bottom:1px solid rgba(51,65,85,.55)}
+.anaitem:last-child{border-bottom:0}
+.anaitem .nm{flex:1;min-width:0}
+.anaitem .nm b{display:block;font-weight:700;color:var(--txt)}
+.anaitem .nm span{color:var(--dim);font-size:11px}
+.anaitem button{padding:6px 11px;font-size:12px;white-space:nowrap}
+.analistempty{font-size:12px;color:var(--dim);padding:4px 0}
+.uselist{margin-top:4px}
+.useitem{display:flex;align-items:center;gap:8px;padding:7px 0;font-size:13px;border-bottom:1px solid rgba(51,65,85,.55)}
+.useitem:last-child{border-bottom:0}
+.useitem .who{flex:1;min-width:0}
+.useitem .who b{display:block;font-weight:700;color:var(--txt)}
+.useitem .who span{color:var(--dim);font-size:11px}
+.useitem .st{text-align:right;color:var(--dim);font-size:11px;white-space:nowrap}
+.useitem .st b{color:var(--txt);font-weight:700}
+.useitem input{width:96px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:#0b1220;color:var(--txt);font:13px inherit}
+.useempty{font-size:12px;color:var(--dim);padding:4px 0}
+footer{display:flex;align-items:center;gap:10px;margin-top:14px}
+#err{color:var(--bad);font-size:13px;margin:6px 4px}
+#setup label{display:block;font-size:12px;color:var(--dim);margin:9px 0 3px}
+#setup input{width:100%;padding:10px;border-radius:9px;border:1px solid var(--line);background:#0b1220;color:var(--txt);font:15px inherit}
+#setup .row{display:flex;gap:8px;margin-top:13px}
+#setup .hint{font-size:12px;color:var(--dim);margin-top:11px;line-height:1.45}
+#setup .hint code{color:#cbd5e1}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header><h1 id="h1Title">Flexcell - admin</h1><div id="age">ucitavam...</div><button id="langBtn" class="lang" title="Jezik / Sprache">DE</button><button id="gear" class="gear" title="Postavke">&#9881;</button></header>
+<div id="setup" class="card" hidden>
+  <div id="setupHeading" style="font-weight:700;margin-bottom:2px">Postavke</div>
+  <label id="lblRepo" hidden>Privatni repo s podacima (korisnik/repo)</label><input id="cfgRepo" placeholder="korisnik/flexcell-stanje" autocapitalize="off" autocorrect="off" spellcheck="false" hidden>
+  <label id="lblPath" hidden>Datoteka</label><input id="cfgPath" placeholder="stanje.json" autocapitalize="off" autocorrect="off" spellcheck="false" hidden>
+  <label id="lblBranch" hidden>Branch</label><input id="cfgBranch" placeholder="main" autocapitalize="off" autocorrect="off" spellcheck="false" hidden>
+  <label id="lblToken">Token s pravom pisanja</label><input id="cfgToken" type="password" placeholder="github_pat_..." autocapitalize="off" autocorrect="off" spellcheck="false">
+  <div class="row"><button id="cfgSave" class="pri">Spremi</button></div>
+  <div id="setupHint" class="hint" hidden>Ova stranica salje zahtjev racunalu, pa token treba pravo <code>Contents: Read and write</code> na <b>privatni</b> repo s podacima. Token ostaje spremljen samo na ovom mobitelu.</div>
+</div>
+<div id="cards"></div>
+<div id="ana" class="card">
+  <div class="anahead"><span id="anaTitle" style="font-weight:700">Analiza</span><span id="anaState" class="anastate"></span></div>
+  <div class="anarow">
+    <select id="anaHours">
+      <option value="6">6 h</option>
+      <option value="12" selected>12 h</option>
+      <option value="24">24 h</option>
+      <option value="48">48 h</option>
+    </select>
+    <button id="anaReq" class="pri">Zatrazi analizu</button>
+  </div>
+  <div id="anaHint" class="anahint"></div>
+  <div id="anaList" class="analist"></div>
+</div>
+<div id="use" class="card">
+  <div class="anahead"><span id="useTitle" style="font-weight:700">Koristenje</span><span id="useState" class="anastate"></span></div>
+  <div id="useList" class="uselist"></div>
+</div>
+<div id="sum" class="sum"></div>
+<div id="err"></div>
+<footer><button id="reload">Osvjezi</button><span id="src" style="font-size:11px;color:var(--dim)"></span></footer>
+<script>
+(function(){
+var I18N={
+  hr:{
+    pageTitle:'Flexcell - admin',
+    loading:'ucitavam...',
+    gearTitle:'Postavke',
+    setupHeading:'Postavke',
+    lblRepo:'Privatni repo s podacima (korisnik/repo)',
+    lblPath:'Datoteka',
+    lblBranch:'Branch',
+    lblToken:'Token s pravom pisanja',
+    btnSave:'Spremi',
+    btnClose:'Zatvori',
+    setupHint:'Ova stranica salje zahtjev racunalu, pa token treba pravo <code>Contents: Read and write</code> na <b>privatni</b> repo s podacima. Token ostaje spremljen samo na ovom mobitelu.',
+    btnReload:'Osvjezi',
+    noMachines:'Nema podataka o strojevima.',
+    kvPieces:'komada',
+    kvSecPerPart:'s/kom',
+    kvEta:'zavrsetak',
+    kvLastPiece:'zadnji komad',
+    kvCounter:'brojac stroja',
+    next:'slijedi',
+    planned:'planirano',
+    unplanned:'neplanirano',
+    csv:'CSV',
+    version:'verzija',
+    now:'sada',
+    minSuffix:'min',
+    qtySuffix:'kom',
+    staleNote:function(age){return 'bez svjezih podataka'+(age?' '+age:'')+' - aplikacija ne cita log stroja'},
+    status:{rad:'rad',podesavanje:'podesavanje',pauza:'pauza',stoj:'stoj',prazno:'prazno'},
+    langBtn:'DE',
+    errTokenRejected:function(s){return 'token nije prihvacen (HTTP '+s+') - provjeri postavke'},
+    errNoFile:'nema datoteke ili token nema pristup repou (404)',
+    errHttp:function(s){return 'HTTP '+s},
+    errBadJson:'neispravan JSON',
+    errFetchPrefix:'Ne mogu dohvatiti podatke: ',
+    anaTitle:'Analiza',
+    anaBtn:'Zatrazi analizu',
+    anaHint:'Racunalo preuzme zahtjev u svom ciklusu (obicno za 1-5 min) i spremi analizu u repo. PC mora biti upaljen.',
+    anaNoToken:'upisi token u postavke',
+    anaNoWrite:'token nema pravo pisanja',
+    anaSending:'saljem zahtjev...',
+    anaWaiting:function(s){return 'cekam racunalo... '+s},
+    anaDone:'spremno',
+    anaFailed:function(e){return 'nije uspjelo: '+e},
+    anaTimeout:'racunalo nije odgovorilo - je li PC upaljen?',
+    anaListEmpty:'Jos nema spremljenih analiza.',
+    anaDl:'Preuzmi',
+    anaDlWorking:'...',
+    anaDlFailed:function(e){return 'preuzimanje nije uspjelo: '+e},
+    anaHours:function(h){return h+' h'},
+    anaNightly:'nocna',
+    useTitle:'Koristenje',
+    useEmpty:'Jos nema zapisa koristenja.',
+    useName:'ime',
+    useOpens:'otvaranja',
+    useLast:'zadnje',
+    useDur:'ukupno',
+    useOnline:'sada online',
+    useNever:'-',
+    useLoadFail:'popis koristenja nije ucitan'
+  },
+  de:{
+    pageTitle:'Flexcell - Admin',
+    loading:'lade...',
+    gearTitle:'Einstellungen',
+    setupHeading:'Einstellungen',
+    lblRepo:'Privates Repo mit Daten (Benutzer/Repo)',
+    lblPath:'Datei',
+    lblBranch:'Branch',
+    lblToken:'Token mit Schreibrecht',
+    btnSave:'Speichern',
+    btnClose:'Schließen',
+    setupHint:'Diese Seite sendet eine Anfrage an den PC, deshalb braucht der Token das Recht <code>Contents: Read and write</code> auf das <b>private</b> Daten-Repo. Der Token bleibt nur auf diesem Handy gespeichert.',
+    btnReload:'Aktualisieren',
+    noMachines:'Keine Maschinendaten vorhanden.',
+    kvPieces:'Stück',
+    kvSecPerPart:'s/Stk',
+    kvEta:'Fertig',
+    kvLastPiece:'letztes Teil',
+    kvCounter:'Maschinenzähler',
+    next:'als nächstes',
+    planned:'geplant',
+    unplanned:'ungeplant',
+    csv:'CSV',
+    version:'Version',
+    now:'jetzt',
+    minSuffix:'Min',
+    qtySuffix:'Stk',
+    staleNote:function(age){return 'keine aktuellen Daten'+(age?' seit '+age:'')+' - App liest das Maschinenlog nicht'},
+    status:{rad:'Läuft',podesavanje:'Einrichtung',pauza:'Pause',stoj:'Gestoppt',prazno:'leer'},
+    langBtn:'HR',
+    errTokenRejected:function(s){return 'Token nicht akzeptiert (HTTP '+s+') - Einstellungen prüfen'},
+    errNoFile:'Datei fehlt oder Token hat keinen Zugriff auf das Repo (404)',
+    errHttp:function(s){return 'HTTP '+s},
+    errBadJson:'ungültiges JSON',
+    errFetchPrefix:'Daten können nicht abgerufen werden: ',
+    anaTitle:'Analyse',
+    anaBtn:'Analyse anfordern',
+    anaHint:'Der PC übernimmt die Anfrage in seinem Zyklus (meist in 1-5 Min) und legt die Analyse im Repo ab. Der PC muss eingeschaltet sein.',
+    anaNoToken:'Token in den Einstellungen eintragen',
+    anaNoWrite:'Token hat kein Schreibrecht',
+    anaSending:'Anfrage wird gesendet...',
+    anaWaiting:function(s){return 'warte auf den PC... '+s},
+    anaDone:'fertig',
+    anaFailed:function(e){return 'fehlgeschlagen: '+e},
+    anaTimeout:'PC hat nicht geantwortet - ist er eingeschaltet?',
+    anaListEmpty:'Noch keine gespeicherten Analysen.',
+    anaDl:'Herunterladen',
+    anaDlWorking:'...',
+    anaDlFailed:function(e){return 'Download fehlgeschlagen: '+e},
+    anaHours:function(h){return h+' h'},
+    anaNightly:'nächtlich',
+    useTitle:'Nutzung',
+    useEmpty:'Noch keine Nutzungsdaten.',
+    useName:'Name',
+    useOpens:'Aufrufe',
+    useLast:'zuletzt',
+    useDur:'gesamt',
+    useOnline:'gerade online',
+    useNever:'-',
+    useLoadFail:'Nutzungsliste nicht geladen'
+  }
+};
+var q=new URLSearchParams(location.search);
+var CFG_KEY='flexcell-status-cfg';
+var LANG_KEY='flexcell-status-lang';
+var PEND_KEY='flexcell-analiza-pending';
+// Zahtjev i odgovor su obicne datoteke u istom privatnom repou - nema servera u sredini.
+var ANA_DIR='analiza';
+var REQ_PATH='zahtjevi/analiza.json';
+var ANS_PATH='zahtjevi/odgovor.json';
+var REQ_TIMEOUT_MS=20*60*1000;
+var POLL_MS=10000;
+var cards=document.getElementById('cards'),sumEl=document.getElementById('sum'),ageEl=document.getElementById('age'),errEl=document.getElementById('err'),srcEl=document.getElementById('src'),setupEl=document.getElementById('setup');
+var anaStateEl=document.getElementById('anaState'),anaListEl=document.getElementById('anaList'),anaBtn=document.getElementById('anaReq'),anaHoursEl=document.getElementById('anaHours');
+// Postavke se cuvaju samo na ovom mobitelu. Preko ?repo=&path=&branch= se mogu i predati linkom
+// (token se linkom NE predaje).
+function loadCfg(){
+  var c={repo:'dadii82/flexcell-stanje',path:'stanje.json',branch:'main',token:''};
+  try{var raw=localStorage.getItem(CFG_KEY);if(raw){var j=JSON.parse(raw);if(j&&typeof j==='object')for(var k in c)if(j[k])c[k]=String(j[k])}}catch(e){}
+  ['repo','path','branch'].forEach(function(k){if(q.get(k))c[k]=String(q.get(k))});
+  return c;
+}
+function saveCfg(c){try{localStorage.setItem(CFG_KEY,JSON.stringify(c))}catch(e){}}
+function loadLang(){
+  var l=q.get('lang');
+  if(l==='hr'||l==='de')return l;
+  try{var raw=localStorage.getItem(LANG_KEY);if(raw==='hr'||raw==='de')return raw}catch(e){}
+  return 'hr';
+}
+function saveLang(l){try{localStorage.setItem(LANG_KEY,l)}catch(e){}}
+// Zahtjev preziv i zatvaranje stranice: mobitel uspije stranicu ubiti dok PC jos radi izvoz.
+function loadPending(){try{var j=JSON.parse(localStorage.getItem(PEND_KEY)||'null');return(j&&j.id)?j:null}catch(e){return null}}
+function savePending(p){try{p?localStorage.setItem(PEND_KEY,JSON.stringify(p)):localStorage.removeItem(PEND_KEY)}catch(e){}}
+var cfg=loadCfg();
+var lang=loadLang();
+var lastData=null;
+var pending=loadPending();
+var SRC=q.get('src')||'';
+function t(){return I18N[lang]}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return c==='&'?'&amp;':c==='<'?'&lt;':c==='>'?'&gt;':'&quot;'})}
+function statusClass(s){s=String(s||'');return s==='rad'?'b-rad':s==='podesavanje'?'b-pod':s==='pauza'?'b-pau':s==='stoj'?'b-stoj':'b-prazno'}
+function statusLabel(s){var m=t().status;return (s&&m[s])?m[s]:m.prazno}
+function num(v){return (v===0||v)?v:'-'}
+function slug(v){return String(v||'').trim().replace(/^https?:\/\/github\.com\//i,'').replace(/\.git$/i,'').replace(/^\/+|\/+$/g,'')}
+function token(){return String(cfg.token||'').trim()}
+function applyStaticText(){
+  var d=t();
+  document.title=d.pageTitle;
+  document.documentElement.lang=lang;
+  document.getElementById('h1Title').textContent=d.pageTitle;
+  document.getElementById('gear').title=d.gearTitle;
+  document.getElementById('setupHeading').textContent=d.setupHeading;
+  document.getElementById('lblRepo').textContent=d.lblRepo;
+  document.getElementById('lblPath').textContent=d.lblPath;
+  document.getElementById('lblBranch').textContent=d.lblBranch;
+  document.getElementById('lblToken').textContent=d.lblToken;
+  document.getElementById('cfgSave').textContent=d.btnSave;
+  document.getElementById('setupHint').innerHTML=d.setupHint;
+  document.getElementById('reload').textContent=d.btnReload;
+  document.getElementById('langBtn').textContent=d.langBtn;
+  document.getElementById('anaTitle').textContent=d.anaTitle;
+  document.getElementById('useTitle').textContent=d.useTitle;
+  document.getElementById('anaHint').textContent=d.anaHint;
+  anaBtn.textContent=d.anaBtn;
+  if(!lastData)ageEl.textContent=d.loading;
+}
+// Aplikacija salje staleMin (minute, -1 = nepoznato) pa se napomena prevodi ovdje, ne u aplikaciji.
+function staleText(m){
+  var min=Number(m.staleMin),age='';
+  if(isFinite(min)&&min>=0)age=min>=120?Math.round(min/60)+' h':min+' min';
+  return t().staleNote(age);
+}
+function render(d){
+  lastData=d;
+  var dict=t();
+  var ms=(d.machines||[]);
+  cards.innerHTML=ms.map(function(m){
+    var pct=Math.max(0,Math.min(100,Number(m.pct)||0));
+    var kv=[];
+    if(m.done!=null&&m.total!=null)kv.push('<span>'+dict.kvPieces+' <b>'+num(m.done)+' / '+num(m.total)+'</b></span>');
+    if(m.secPerPart)kv.push('<span>'+dict.kvSecPerPart+' <b>'+m.secPerPart+'</b></span>');
+    if(m.etaText)kv.push('<span>'+dict.kvEta+' <b>'+esc(m.etaText)+'</b></span>');
+    if(m.lastPieceText)kv.push('<span>'+dict.kvLastPiece+' <b>'+esc(m.lastPieceText)+'</b></span>');
+    if(m.counter!=null)kv.push('<span>'+dict.kvCounter+' <b>'+num(m.counter)+'</b></span>');
+    var nx=(m.next||[]).map(function(n){return esc(n.program)+(n.ip?' / '+esc(n.ip):'')+(n.qty?' ('+n.qty+' '+dict.qtySuffix+')':'')}).join(' &rarr; ');
+    return '<div class="card">'
+      +'<div class="top"><span class="mach">'+esc(m.machine)+'</span>'
+      +'<span><span class="prog">'+esc(m.program||'-')+'</span> <span class="ip">'+esc(m.ip||'')+'</span></span>'
+      +'<span class="badge '+statusClass(m.status)+'">'+esc(statusLabel(m.status))+'</span></div>'
+      +(m.stale?'<div class="stalenote">'+esc(staleText(m))+'</div>':'')
+      +(m.name?'<div class="ip" style="margin:-4px 0 6px">'+esc(m.name)+'</div>':'')
+      +(m.img?'<div class="pimg"><img data-imgpath="'+esc(m.img)+'" alt="" loading="lazy"></div>':'')
+      +'<div class="bar"><i style="width:'+pct+'%"></i><span>'+pct+' %</span></div>'
+      +'<div class="kv">'+kv.join('')+'</div>'
+      +(nx?'<div class="next">'+dict.next+': <b>'+nx+'</b></div>':'')
+      +'</div>';
+  }).join('')||'<div class="card">'+dict.noMachines+'</div>';
+  var p=d.plan||{},s=[];
+  if(p.planned!=null)s.push('<span>'+dict.planned+' <b>'+p.planned+'</b></span>');
+  if(p.unplanned!=null)s.push('<span>'+dict.unplanned+' <b>'+p.unplanned+'</b></span>');
+  if(p.csv)s.push('<span>'+dict.csv+' <b>'+esc(p.csv)+'</b>'+(p.csvText?' ('+esc(p.csvText)+')':'')+'</span>');
+  if(d.app)s.push('<span>'+dict.version+' <b>'+esc(d.app)+'</b></span>');
+  sumEl.innerHTML=s.join('');
+  var at=Date.parse(d.at||'')||0,min=at?Math.round((Date.now()-at)/60000):null;
+  ageEl.textContent=(d.atText||'')+(min!=null?'  ('+(min<1?dict.now:min+' '+dict.minSuffix)+')':'');
+  ageEl.className=(min!=null&&min>15)?'stale':'';
+  loadCardImages();
+}
+var imgCache={};
+function loadCardImages(){
+  var repo=slug(cfg.repo),tok=String(cfg.token||'').trim();
+  Array.prototype.forEach.call(cards.querySelectorAll('img[data-imgpath]'),function(im){
+    var path=im.getAttribute('data-imgpath')||'';
+    im.parentNode.addEventListener('click',function(){im.parentNode.classList.toggle('zoom')});
+    if(!path)return;
+    if(imgCache[path]){im.src=imgCache[path];return}
+    if(!repo||!tok){
+      // Bez tokena (lokalni server / javni repo): pokusaj datoteku uz stranicu.
+      im.src=path+(path.indexOf('?')<0?'?':'&')+'t='+Date.now();return;
+    }
+    fetch('https://api.github.com/repos/'+repo+'/contents/'+encodeURI(path.replace(/^\/+/,''))
+      +'?ref='+encodeURIComponent(cfg.branch||'main')+'&t='+Date.now(),
+      {cache:'no-store',headers:{Authorization:'Bearer '+tok,Accept:'application/vnd.github.raw','X-GitHub-Api-Version':'2022-11-28'}})
+     .then(function(r){return r.ok?r.blob():null})
+     .then(function(b){if(b){var u=URL.createObjectURL(b);imgCache[path]=u;im.src=u}})
+     .catch(function(){});
+  });
+}
+function fail(msg){errEl.textContent=msg}
+// Privatni repo se cita preko contents API-ja (Accept: raw vraca sam sadrzaj datoteke).
+// Ako token nije unesen, stranica pada na obicnu datoteku uz sebe - za javni repo / lokalni server.
+function load(){
+  errEl.textContent='';
+  var repo=slug(cfg.repo),tok=token();
+  var url,opt={cache:'no-store'};
+  if(repo&&tok){
+    url='https://api.github.com/repos/'+repo+'/contents/'+encodeURI(String(cfg.path||'stanje.json').replace(/^\/+/,''))
+       +'?ref='+encodeURIComponent(cfg.branch||'main')+'&t='+Date.now();
+    opt.headers={Authorization:'Bearer '+tok,Accept:'application/vnd.github.raw','X-GitHub-Api-Version':'2022-11-28'};
+    srcEl.textContent=repo+'/'+(cfg.path||'stanje.json');
+  }else{
+    var f=SRC||'stanje.json';
+    url=f+(f.indexOf('?')<0?'?':'&')+'t='+Date.now();
+    srcEl.textContent=f;
+  }
+  fetch(url,opt).then(function(r){
+    var dict=t();
+    if(r.status===401||r.status===403)throw new Error(dict.errTokenRejected(r.status));
+    if(r.status===404)throw new Error(dict.errNoFile);
+    if(!r.ok)throw new Error(dict.errHttp(r.status));
+    return r.text();
+  }).then(function(txt){
+    var d;try{d=JSON.parse(txt)}catch(e){throw new Error(t().errBadJson)}
+    render(d);
+  }).catch(function(e){
+    fail(t().errFetchPrefix+(e&&e.message||e));
+    if(!slug(cfg.repo)||!token())openSetup();
+  });
+}
+// ---- analiza: zahtjev, odgovor, popis ----
+function ghUrl(path){return 'https://api.github.com/repos/'+slug(cfg.repo)+'/contents/'+encodeURI(String(path||'').replace(/^\/+/,''))}
+function ghHeaders(accept){return{Authorization:'Bearer '+token(),Accept:accept||'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}}
+// Bez kesiranja: GitHub API salje max-age=60, pa bi se stari odgovor/sha vrtio u krug.
+function ghGet(path,accept){
+  return fetch(ghUrl(path)+'?ref='+encodeURIComponent(cfg.branch||'main')+'&t='+Date.now(),{cache:'no-store',headers:ghHeaders(accept)});
+}
+function b64(s){return btoa(unescape(encodeURIComponent(String(s))))}
+function randId(){
+  var a=new Uint8Array(8);
+  if(window.crypto&&crypto.getRandomValues)crypto.getRandomValues(a);
+  else for(var i=0;i<8;i++)a[i]=Math.floor(Math.random()*256);
+  return Array.prototype.map.call(a,function(x){return ('0'+x.toString(16)).slice(-2)}).join('');
+}
+function setAnaState(txt,cls){anaStateEl.textContent=txt||'';anaStateEl.className='anastate'+(cls?' '+cls:'')}
+function elapsedText(ms){
+  var s=Math.max(0,Math.round(ms/1000));
+  return Math.floor(s/60)+':'+('0'+(s%60)).slice(-2);
+}
+function sendRequest(){
+  var dict=t();
+  if(!token()||!slug(cfg.repo)){setAnaState(dict.anaNoToken,'bad');openSetup();return}
+  var hours=Math.max(1,Math.round(Number(anaHoursEl.value)||12));
+  anaBtn.disabled=true;
+  setAnaState(dict.anaSending,'work');
+  ghGet(REQ_PATH).then(function(r){
+    if(r.status===404)return '';
+    if(r.status===401||r.status===403)throw new Error(dict.errTokenRejected(r.status));
+    if(!r.ok)throw new Error(dict.errHttp(r.status));
+    return r.json().then(function(j){return String(j&&j.sha||'')});
+  }).then(function(sha){
+    var id=randId();
+    var body={hours:hours,id:id,at:new Date().toISOString(),from:'analiza.html'};
+    var payload={message:'zahtjev za analizu '+hours+'h',content:b64(JSON.stringify(body)),branch:cfg.branch||'main'};
+    if(sha)payload.sha=sha;
+    return fetch(ghUrl(REQ_PATH),{method:'PUT',cache:'no-store',headers:ghHeaders(),body:JSON.stringify(payload)}).then(function(r){
+      if(r.status===403)throw new Error(dict.anaNoWrite);
+      if(r.status===401)throw new Error(dict.errTokenRejected(r.status));
+      if(!r.ok)throw new Error(dict.errHttp(r.status));
+      pending={id:id,hours:hours,at:Date.now()};
+      savePending(pending);
+      tickPending();
+    });
+  }).catch(function(e){
+    setAnaState(t().anaFailed(e&&e.message||e),'bad');
+    anaBtn.disabled=false;
+  });
+}
+function tickPending(){
+  if(!pending){anaBtn.disabled=false;return}
+  var waited=Date.now()-Number(pending.at||0);
+  if(waited>REQ_TIMEOUT_MS){
+    pending=null;savePending(null);anaBtn.disabled=false;
+    setAnaState(t().anaTimeout,'bad');
+    return;
+  }
+  anaBtn.disabled=true;
+  setAnaState(t().anaWaiting(elapsedText(waited)),'work');
+}
+function pollAnswer(){
+  if(!pending||!token()||!slug(cfg.repo))return;
+  ghGet(ANS_PATH,'application/vnd.github.raw').then(function(r){
+    if(!r.ok)return null;
+    return r.text();
+  }).then(function(txt){
+    if(!txt||!pending)return;
+    var j;try{j=JSON.parse(txt)}catch(e){return}
+    if(!j||String(j.id||'')!==String(pending.id))return;
+    pending=null;savePending(null);anaBtn.disabled=false;
+    if(j.ok){
+      setAnaState(t().anaDone,'ok');
+      loadAnaList();
+    }else{
+      setAnaState(t().anaFailed(String(j.err||'')),'bad');
+    }
+  }).catch(function(){});
+}
+// flexcell-analiza-12h-20260918-092700.json.gz  ->  "12 h - 18.09.2026 09:27"
+function describeAnaFile(name){
+  var m=/^flexcell-analiza-(\d+)h-(\d{4})(\d{2})(\d{2})(?:-(\d{2})(\d{2})(\d{2}))?\./i.exec(String(name||''));
+  if(!m)return{label:String(name||''),sub:'',ts:0};
+  var h=Number(m[1]),y=Number(m[2]),mo=Number(m[3]),d=Number(m[4]);
+  var hh=m[5]?Number(m[5]):0,mi=m[6]?Number(m[6]):0,ss=m[7]?Number(m[7]):0;
+  var dateTxt=('0'+d).slice(-2)+'.'+('0'+mo).slice(-2)+'.'+y+(m[5]?' '+('0'+hh).slice(-2)+':'+('0'+mi).slice(-2):'');
+  return{label:t().anaHours(h)+'  -  '+dateTxt,sub:m[5]?'':t().anaNightly,ts:new Date(y,mo-1,d,hh,mi,ss).getTime()};
+}
+function sizeText(bytes){
+  var b=Number(bytes)||0;
+  return b>=1048576?(b/1048576).toFixed(1)+' MB':Math.max(1,Math.round(b/1024))+' kB';
+}
+function loadAnaList(){
+  if(!token()||!slug(cfg.repo)){anaListEl.innerHTML='';return}
+  ghGet(ANA_DIR).then(function(r){
+    if(r.status===404)return [];
+    if(!r.ok)throw new Error(t().errHttp(r.status));
+    return r.json();
+  }).then(function(arr){
+    if(!Array.isArray(arr))arr=[];
+    var rows=arr.filter(function(x){return x&&x.type==='file'}).map(function(x){
+      var info=describeAnaFile(x.name);
+      return{name:String(x.name||''),path:String(x.path||''),size:Number(x.size)||0,label:info.label,sub:info.sub,ts:info.ts};
+    }).sort(function(a,b){return (b.ts-a.ts)||(a.name<b.name?1:-1)}).slice(0,10);
+    if(!rows.length){anaListEl.innerHTML='<div class="analistempty">'+esc(t().anaListEmpty)+'</div>';return}
+    anaListEl.innerHTML=rows.map(function(r,i){
+      var sub=[r.sub,sizeText(r.size)].filter(Boolean).join('  -  ');
+      return '<div class="anaitem"><span class="nm"><b>'+esc(r.label)+'</b><span>'+esc(sub)+'</span></span>'
+        +'<button data-i="'+i+'">'+esc(t().anaDl)+'</button></div>';
+    }).join('');
+    Array.prototype.forEach.call(anaListEl.querySelectorAll('button[data-i]'),function(b){
+      b.addEventListener('click',function(){downloadAna(rows[Number(b.getAttribute('data-i'))],b)});
+    });
+  }).catch(function(){anaListEl.innerHTML=''});
+}
+// .gz se raspakira u pregledniku da na mobitelu zavrsi obican .json; ako preglednik nema
+// DecompressionStream, spremi se stisnuta datoteka kakva jest.
+function downloadAna(row,btn){
+  if(!row)return;
+  var dict=t(),old=btn.textContent;
+  btn.disabled=true;btn.textContent=dict.anaDlWorking;
+  ghGet(row.path,'application/vnd.github.raw').then(function(r){
+    if(!r.ok)throw new Error(dict.errHttp(r.status));
+    return r.arrayBuffer();
+  }).then(function(buf){
+    var gz=/\.gz$/i.test(row.name);
+    if(gz&&typeof DecompressionStream!=='undefined'){
+      return new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'))).blob()
+        .then(function(b){return{blob:b,name:row.name.replace(/\.gz$/i,'')}});
+    }
+    return{blob:new Blob([buf]),name:row.name};
+  }).then(function(o){
+    var u=URL.createObjectURL(o.blob),a=document.createElement('a');
+    a.href=u;a.download=o.name;document.body.appendChild(a);a.click();
+    setTimeout(function(){URL.revokeObjectURL(u);a.remove()},1500);
+    btn.disabled=false;btn.textContent=old;
+  }).catch(function(e){
+    btn.disabled=false;btn.textContent=old;
+    setAnaState(dict.anaDlFailed(e&&e.message||e),'bad');
+  });
+}
+function openSetup(){
+  document.getElementById('cfgRepo').value=cfg.repo||'';
+  document.getElementById('cfgPath').value=cfg.path||'stanje.json';
+  document.getElementById('cfgBranch').value=cfg.branch||'main';
+  document.getElementById('cfgToken').value=cfg.token||'';
+  setupEl.hidden=false;
+}
+document.getElementById('gear').addEventListener('click',function(){setupEl.hidden?openSetup():setupEl.hidden=true});
+document.getElementById('cfgSave').addEventListener('click',function(){
+  cfg={
+    repo:slug(document.getElementById('cfgRepo').value),
+    path:String(document.getElementById('cfgPath').value||'stanje.json').trim()||'stanje.json',
+    branch:String(document.getElementById('cfgBranch').value||'main').trim()||'main',
+    token:String(document.getElementById('cfgToken').value||'').trim()
+  };
+  saveCfg(cfg);
+  setupEl.hidden=true;
+  load();
+  loadAnaList();
+});
+document.getElementById('langBtn').addEventListener('click',function(){
+  lang=(lang==='hr')?'de':'hr';
+  saveLang(lang);
+  applyStaticText();
+  if(lastData)render(lastData);
+  tickPending();
+  loadAnaList();
+});
+document.getElementById('reload').addEventListener('click',function(){load();loadAnaList();loadVisits()});
+// --- Koristenje: admin cita cache/<id>.json i prikazuje po osobi ---
+// Imena su SAMO na ovom (admin) uredaju - u repou ih nema. Kljuc je otisak tokena, uz zadnje 4
+// znamenke tokena da se prepozna cija je datoteka pri prvom imenovanju.
+var VNAMES_KEY='flexcell-visit-names';
+var useStateEl=document.getElementById('useState'),useListEl=document.getElementById('useList');
+function loadVNames(){try{var j=JSON.parse(localStorage.getItem(VNAMES_KEY)||'{}');return(j&&typeof j==='object')?j:{}}catch(e){return{}}}
+function saveVName(id,name){try{var m=loadVNames();if(name)m[id]=name;else delete m[id];localStorage.setItem(VNAMES_KEY,JSON.stringify(m))}catch(e){}}
+function sumDurMin(rec){
+  var sec=0,ss=(rec&&rec.sessions)||[];
+  for(var i=0;i<ss.length;i++)sec+=Math.max(0,Number(ss[i]&&ss[i].d)||0);
+  return Math.round(sec/60);
+}
+function renderVisits(rows){
+  var d=t(),names=loadVNames();
+  if(!rows.length){useListEl.innerHTML='<div class="useempty">'+esc(d.useEmpty)+'</div>';return}
+  useListEl.innerHTML=rows.map(function(r,i){
+    var lastMs=Date.parse(r.last||'')||0,online=lastMs&&(Date.now()-lastMs)<7*60000;
+    var relTxt=lastMs?(online?d.useOnline:( (function(){var min=Math.round((Date.now()-lastMs)/60000);return min<60?min+' '+d.minSuffix:(min<1440?Math.round(min/60)+' h':Math.round(min/1440)+' d')})() )):d.useNever;
+    var nm=names[r.id]||'';
+    return '<div class="useitem"><span class="who">'
+      +'<input data-id="'+esc(r.id)+'" placeholder="'+esc(d.useName)+'" value="'+esc(nm)+'">'
+      +'<span>token …'+esc(r.tail||'????')+(r.ver?'  ·  v'+esc(r.ver):'')+'</span></span>'
+      +'<span class="st"><b>'+(online?d.useOnline:d.useLast+' '+relTxt)+'</b><br>'
+      +d.useOpens+' '+esc(String(r.opens||0))+'  ·  '+d.useDur+' '+sumDurMin(r)+' '+d.minSuffix+'</span></div>';
+  }).join('');
+  Array.prototype.forEach.call(useListEl.querySelectorAll('input[data-id]'),function(inp){
+    inp.addEventListener('change',function(){saveVName(inp.getAttribute('data-id'),String(inp.value||'').trim())});
+  });
+}
+function loadVisits(){
+  if(!token()||!slug(cfg.repo)){useListEl.innerHTML='';return}
+  ghGet('cache').then(function(r){
+    if(r.status===404)return [];
+    if(!r.ok)throw new Error(t().errHttp(r.status));
+    return r.json();
+  }).then(function(arr){
+    if(!Array.isArray(arr))arr=[];
+    var files=arr.filter(function(x){return x&&x.type==='file'&&/\.json$/i.test(x.name||'')});
+    return Promise.all(files.map(function(f){
+      return ghGet(f.path,'application/vnd.github.raw').then(function(r){return r.ok?r.text():''}).then(function(txt){
+        try{return JSON.parse(txt)}catch(e){return null}
+      }).catch(function(){return null});
+    }));
+  }).then(function(recs){
+    var rows=(recs||[]).filter(function(x){return x&&x.id}).sort(function(a,b){return (Date.parse(b.last||'')||0)-(Date.parse(a.last||'')||0)});
+    setUseState('');
+    renderVisits(rows);
+  }).catch(function(e){setUseState(t().useLoadFail,'bad');});
+}
+function setUseState(txt,cls){useStateEl.textContent=txt||'';useStateEl.className='anastate'+(cls?' '+cls:'')}
+anaBtn.addEventListener('click',sendRequest);
+document.addEventListener('visibilitychange',function(){if(!document.hidden){load();pollAnswer();loadAnaList();loadVisits()}});
+setInterval(load,30000);
+setInterval(pollAnswer,POLL_MS);
+setInterval(tickPending,1000);
+setInterval(loadVisits,60000);
+applyStaticText();
+if(!slug(cfg.repo)&&!SRC)openSetup();
+load();
+tickPending();
+pollAnswer();
+loadAnaList();
+loadVisits();
+})();
+</script>
+</body>
+</html>
