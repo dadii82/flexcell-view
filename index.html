@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0f172a">
 <!-- Verziju upisuje aplikacija pri objavi; po njoj zna je li objavljena stranica starija od njene. -->
-<meta name="flexcell-page-version" content="2.5.16">
+<meta name="flexcell-page-version" content="2.5.18">
 <title>Flexcell - stanje</title>
 <style>
 :root{--bg:#0f172a;--card:#1e293b;--line:#334155;--txt:#e2e8f0;--dim:#94a3b8;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--idle:#64748b}
@@ -36,6 +36,9 @@ h1{margin:0;font-size:17px;letter-spacing:.02em;flex:1}
 .next{margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);font-size:12px;color:var(--dim)}
 .next b{color:#cbd5e1}
 .stalenote{margin:-2px 0 6px;font-size:12px;font-weight:700;color:var(--warn)}
+.pimg{margin:6px 0 2px;text-align:center}
+.pimg img{max-width:100%;max-height:230px;border-radius:10px;border:1px solid var(--line);background:#0b1220;cursor:zoom-in}
+.pimg.zoom img{max-height:none;cursor:zoom-out}
 .sum{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--dim);padding:2px 4px}
 .sum b{color:var(--txt)}
 button{appearance:none;border:1px solid var(--line);background:#0b1220;color:var(--txt);font:600 13px inherit;padding:9px 14px;border-radius:10px}
@@ -212,6 +215,7 @@ function render(d){
       +'<span class="badge '+statusClass(m.status)+'">'+esc(statusLabel(m.status))+'</span></div>'
       +(m.stale?'<div class="stalenote">'+esc(staleText(m))+'</div>':'')
       +(m.name?'<div class="ip" style="margin:-4px 0 6px">'+esc(m.name)+'</div>':'')
+      +(m.img?'<div class="pimg"><img data-imgpath="'+esc(m.img)+'" alt="" loading="lazy"></div>':'')
       +'<div class="bar"><i style="width:'+pct+'%"></i><span>'+pct+' %</span></div>'
       +'<div class="kv">'+kv.join('')+'</div>'
       +(nx?'<div class="next">'+dict.next+': <b>'+nx+'</b></div>':'')
@@ -226,6 +230,71 @@ function render(d){
   var at=Date.parse(d.at||'')||0,min=at?Math.round((Date.now()-at)/60000):null;
   ageEl.textContent=(d.atText||'')+(min!=null?'  ('+(min<1?dict.now:min+' '+dict.minSuffix)+')':'');
   ageEl.className=(min!=null&&min>15)?'stale':'';
+  loadCardImages();
+}
+// --- Zapis koristenja (po osobi) ---
+// Svaka osoba ima svoj token; zapis se sprema u cache/<otisak-tokena>.json u istom privatnom repou.
+// U repo NE ide ni ime ni cijeli token - samo nepovratni otisak tokena i njegove zadnje 4 znamenke,
+// da admin prepozna cija je datoteka. Ime dodaje admin i ostaje na njegovom uredaju.
+var PAGE_ROLE='user';
+function pageVer(){var m=document.querySelector('meta[name="flexcell-page-version"]');return m?String(m.getAttribute('content')||''):''}
+// Obican string-hash (FNV-ish), ne kriptografski - dovoljno da razlikuje tokene, a iz njega se token
+// ne moze rekonstruirati.
+function tokenFingerprint(tok){
+  tok=String(tok||'');var h1=0x811c9dc5>>>0,h2=(0x1000193)>>>0;
+  for(var i=0;i<tok.length;i++){var c=tok.charCodeAt(i);h1=(h1^c)>>>0;h1=(Math.imul(h1,0x01000193))>>>0;h2=(Math.imul(h2^c,33))>>>0;}
+  return ('00000000'+h1.toString(16)).slice(-8)+('00000000'+h2.toString(16)).slice(-8);
+}
+function tokenTail(tok){tok=String(tok||'');return tok?tok.slice(-4):''}
+function ghVHdr(tok,accept){return{Authorization:'Bearer '+tok,Accept:accept||'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}}
+var visitSessionStart=Date.now(),visitLastWrite=0,visitStartedThisLoad=false;
+function writeVisit(kind){
+  var repo=slug(cfg.repo),tok=String(cfg.token||'').trim();
+  if(!repo||!tok)return;
+  var now=Date.now();
+  // "open" pise uvijek; heartbeat najvise svakih 5 min, da repo ne dobije gomilu commitova.
+  if(kind!=='open'&&now-visitLastWrite<5*60*1000)return;
+  visitLastWrite=now;
+  var id=tokenFingerprint(tok),path='cache/'+id+'.json';
+  var url='https://api.github.com/repos/'+repo+'/contents/'+encodeURI(path);
+  var hdr=ghVHdr(tok);
+  fetch(url+'?ref='+encodeURIComponent(cfg.branch||'main')+'&t='+now,{cache:'no-store',headers:hdr})
+   .then(function(r){return (r.status===404)?null:(r.ok?r.json():Promise.reject(new Error('http')))})
+   .then(function(j){
+     var prev={},sha='';
+     if(j){sha=String(j.sha||'');try{prev=JSON.parse(decodeURIComponent(escape(atob(String(j.content||'').replace(/\s+/g,'')))))}catch(e){}}
+     var iso=new Date(now).toISOString();
+     var sessions=(prev.sessions&&prev.sessions.slice)?prev.sessions.slice(-19):[];
+     if(kind==='open'&&!visitStartedThisLoad){visitStartedThisLoad=true;sessions.push({s:iso,d:0});}
+     if(sessions.length){sessions[sessions.length-1].d=Math.max(0,Math.round((now-visitSessionStart)/1000));sessions[sessions.length-1].l=iso;}
+     var rec={id:id,tail:tokenTail(tok),first:prev.first||iso,last:iso,
+              opens:(Number(prev.opens)||0)+(kind==='open'?1:0),sessions:sessions,ver:pageVer(),page:PAGE_ROLE};
+     var chdr=ghVHdr(tok);chdr['Content-Type']='application/json';
+     var body={message:'koristenje '+id.slice(0,6),content:btoa(unescape(encodeURIComponent(JSON.stringify(rec)))),branch:cfg.branch||'main'};
+     if(sha)body.sha=sha;
+     return fetch(url,{method:'PUT',cache:'no-store',headers:chdr,body:JSON.stringify(body)});
+   })
+   .catch(function(){visitLastWrite=0;});
+}
+var imgCache={};
+function loadCardImages(){
+  var repo=slug(cfg.repo),tok=String(cfg.token||'').trim();
+  Array.prototype.forEach.call(cards.querySelectorAll('img[data-imgpath]'),function(im){
+    var path=im.getAttribute('data-imgpath')||'';
+    im.parentNode.addEventListener('click',function(){im.parentNode.classList.toggle('zoom')});
+    if(!path)return;
+    if(imgCache[path]){im.src=imgCache[path];return}
+    if(!repo||!tok){
+      // Bez tokena (lokalni server / javni repo): pokusaj datoteku uz stranicu.
+      im.src=path+(path.indexOf('?')<0?'?':'&')+'t='+Date.now();return;
+    }
+    fetch('https://api.github.com/repos/'+repo+'/contents/'+encodeURI(path.replace(/^\/+/,''))
+      +'?ref='+encodeURIComponent(cfg.branch||'main')+'&t='+Date.now(),
+      {cache:'no-store',headers:{Authorization:'Bearer '+tok,Accept:'application/vnd.github.raw','X-GitHub-Api-Version':'2022-11-28'}})
+     .then(function(r){return r.ok?r.blob():null})
+     .then(function(b){if(b){var u=URL.createObjectURL(b);imgCache[path]=u;im.src=u}})
+     .catch(function(){});
+  });
 }
 function fail(msg){errEl.textContent=msg}
 // Privatni repo se cita preko contents API-ja (Accept: raw vraca sam sadrzaj datoteke).
@@ -284,8 +353,11 @@ document.getElementById('langBtn').addEventListener('click',function(){
   if(lastData)render(lastData);
 });
 document.getElementById('reload').addEventListener('click',load);
-document.addEventListener('visibilitychange',function(){if(!document.hidden)load()});
+document.addEventListener('visibilitychange',function(){if(document.hidden){writeVisit('beat')}else{load();writeVisit('beat')}});
+window.addEventListener('pagehide',function(){writeVisit('beat')});
 setInterval(load,30000);
+setInterval(function(){if(!document.hidden)writeVisit('beat')},5*60*1000);
+writeVisit('open');
 applyStaticText();
 if(!slug(cfg.repo)&&!SRC)openSetup();
 load();
