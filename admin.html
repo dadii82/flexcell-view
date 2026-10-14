@@ -26,6 +26,7 @@ h1{margin:0;font-size:17px;letter-spacing:.02em;flex:1}
 .b-pod{color:#fde68a;border-color:#92400e;background:#78350f}
 .b-pau{color:#fed7aa;border-color:#9a3412;background:#7c2d12}
 .b-stoj{color:#e2e8f0;border-color:#475569;background:#334155}
+.b-got{color:#a5f3fc;border-color:#0e7490;background:#164e63}
 .b-prazno{color:#cbd5e1;border-color:#475569;background:#1e293b}
 .prog{font-size:15px;font-weight:700}
 .ip{color:var(--dim);font-size:13px}
@@ -152,7 +153,7 @@ var I18N={
     minSuffix:'min',
     qtySuffix:'kom',
     staleNote:function(age){return 'bez svjezih podataka'+(age?' '+age:'')+' - aplikacija ne cita log stroja'},
-    status:{rad:'rad',podesavanje:'podesavanje',pauza:'pauza',stoj:'stoj',prazno:'prazno'},
+    status:{rad:'rad',podesavanje:'podesavanje',pauza:'pauza',stoj:'stoj',gotov:'gotov',prazno:'prazno'},
     langBtn:'DE',
     errTokenRejected:function(s){return 'token nije prihvacen (HTTP '+s+') - provjeri postavke'},
     errNoFile:'nema datoteke ili token nema pristup repou (404)',
@@ -216,7 +217,7 @@ var I18N={
     minSuffix:'Min',
     qtySuffix:'Stk',
     staleNote:function(age){return 'keine aktuellen Daten'+(age?' seit '+age:'')+' - App liest das Maschinenlog nicht'},
-    status:{rad:'Läuft',podesavanje:'Einrichtung',pauza:'Pause',stoj:'Gestoppt',prazno:'leer'},
+    status:{rad:'Läuft',podesavanje:'Einrichtung',pauza:'Pause',stoj:'Gestoppt',gotov:'Fertig',prazno:'leer'},
     langBtn:'HR',
     errTokenRejected:function(s){return 'Token nicht akzeptiert (HTTP '+s+') - Einstellungen prüfen'},
     errNoFile:'Datei fehlt oder Token hat keinen Zugriff auf das Repo (404)',
@@ -288,7 +289,9 @@ var pending=loadPending();
 var SRC=q.get('src')||'';
 function t(){return I18N[lang]}
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return c==='&'?'&amp;':c==='<'?'&lt;':c==='>'?'&gt;':'&quot;'})}
-function statusClass(s){s=String(s||'');return s==='rad'?'b-rad':s==='podesavanje'?'b-pod':s==='pauza'?'b-pau':s==='stoj'?'b-stoj':'b-prazno'}
+function statusClass(s){s=String(s||'');return s==='rad'?'b-rad':s==='podesavanje'?'b-pod':s==='pauza'?'b-pau':s==='stoj'?'b-stoj':s==='gotov'?'b-got':'b-prazno'}
+// Nalog na 100 % (sve komade napravio) a stroj stoji/pauzira = gotov, ne 'stoj'.
+function cardStatus(m){var s=String(m&&m.status||'');if((s==='stoj'||s==='pauza')&&!m.stale&&Number(m.total)>0&&Number(m.done)>=Number(m.total))return 'gotov';return s}
 function statusLabel(s){var m=t().status;return (s&&m[s])?m[s]:m.prazno}
 function num(v){return (v===0||v)?v:'-'}
 function slug(v){return String(v||'').trim().replace(/^https?:\/\/github\.com\//i,'').replace(/\.git$/i,'').replace(/^\/+|\/+$/g,'')}
@@ -339,7 +342,7 @@ function render(d){
       +'<div class="top"><span class="mach">'+esc(m.machine)+'</span>'
       +'<span><span class="prog">'+esc(m.program||'-')+'</span> <span class="ip">'+esc(m.ip||'')+'</span></span>'
       +(m.img?'<span class="imgtag">&#128247;</span>':'')
-      +'<span class="badge '+statusClass(m.status)+'">'+esc(statusLabel(m.status))+'</span></div>'
+      +'<span class="badge '+statusClass(cardStatus(m))+'">'+esc(statusLabel(cardStatus(m)))+'</span></div>'
       +(m.stale?'<div class="stalenote">'+esc(staleText(m))+'</div>':'')
       +(m.name?'<div class="ip" style="margin:-4px 0 6px">'+esc(m.name)+'</div>':'')
       +'<div class="bar"><i style="width:'+pct+'%"></i><span>'+pct+' %</span></div>'
