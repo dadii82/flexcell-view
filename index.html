@@ -54,6 +54,13 @@ footer{display:flex;align-items:center;gap:10px;margin-top:14px}
 #setup .row{display:flex;gap:8px;margin-top:13px}
 #setup .hint{font-size:12px;color:var(--dim);margin-top:11px;line-height:1.45}
 #setup .hint code{color:#cbd5e1}
+/* Aplikacija ne salje (stanje.json stariji od 15 min): OFFLINE na sredini, kartice zamucene, zaglavlje s vremenom ostaje ostro. */
+#cards,#sum{transition:filter .3s ease}
+body.offline #cards,body.offline #sum{filter:blur(3px);opacity:.55}
+#offline{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;pointer-events:none}
+#offline .box{text-align:center;padding:16px 26px;border-radius:16px;border:1px solid #7f1d1d;background:rgba(15,23,42,.88);box-shadow:0 10px 40px rgba(0,0,0,.5)}
+#offline b{display:block;font-size:34px;font-weight:900;letter-spacing:.12em;color:var(--bad)}
+#offline span{display:block;margin-top:4px;font-size:13px;color:var(--dim)}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -72,6 +79,7 @@ footer{display:flex;align-items:center;gap:10px;margin-top:14px}
 <div id="sum" class="sum"></div>
 <div id="err"></div>
 <footer><button id="reload">Osvjezi</button><span id="src" style="font-size:11px;color:var(--dim)"></span></footer>
+<div id="offline" hidden><div class="box"><b>OFFLINE</b><span id="offlineSub"></span></div></div>
 <div id="lb" hidden><img id="lbimg" alt=""><div id="lbnote"></div></div>
 <script>
 (function(){
@@ -106,6 +114,7 @@ var I18N={
     now:'sada',
     minSuffix:'min',
     qtySuffix:'kom',
+    offlineSub:function(age){return 'zadnji podaci prije '+age},
     staleNote:function(age){return 'bez svjezih podataka'+(age?' '+age:'')+' - aplikacija ne cita log stroja'},
     status:{rad:'rad',podesavanje:'podesavanje',pauza:'pauza',stoj:'stoj',gotov:'gotov',prazno:'prazno'},
     langBtn:'DE',
@@ -145,6 +154,7 @@ var I18N={
     now:'jetzt',
     minSuffix:'Min',
     qtySuffix:'Stk',
+    offlineSub:function(age){return 'letzte Daten vor '+age},
     staleNote:function(age){return 'keine aktuellen Daten'+(age?' seit '+age:'')+' - App liest das Maschinenlog nicht'},
     status:{rad:'Läuft',podesavanje:'Einrichtung',pauza:'Pause',stoj:'Gestoppt',gotov:'Fertig',prazno:'leer'},
     langBtn:'HR',
@@ -209,6 +219,19 @@ function staleText(m){
   if(isFinite(min)&&min>=0)age=min>=120?Math.round(min/60)+' h':min+' min';
   return t().staleNote(age);
 }
+// Starost podataka se racuna i izmedju dohvacanja (setInterval), da OFFLINE izadje i kad dohvat ne uspije.
+var offlineEl=document.getElementById('offline'),offlineSubEl=document.getElementById('offlineSub');
+function updateAge(){
+  var d=lastData;if(!d)return;
+  var dict=t();
+  var at=Date.parse(d.at||'')||0,min=at?Math.round((Date.now()-at)/60000):null;
+  var off=min!=null&&min>15;
+  ageEl.textContent=(d.atText||'')+(min!=null?'  ('+(min<1?dict.now:min+' '+dict.minSuffix)+')':'');
+  ageEl.className=off?'stale':'';
+  document.body.classList.toggle('offline',off);
+  offlineEl.hidden=!off;
+  if(off)offlineSubEl.textContent=dict.offlineSub(min>=120?Math.round(min/60)+' h':min+' '+dict.minSuffix);
+}
 function render(d){
   lastData=d;
   var dict=t();
@@ -242,9 +265,7 @@ function render(d){
   if(p.csv)s.push('<span>'+dict.csv+' <b>'+esc(p.csv)+'</b>'+(p.csvText?' ('+esc(p.csvText)+')':'')+'</span>');
   if(d.app)s.push('<span>'+dict.version+' <b>'+esc(d.app)+'</b></span>');
   sumEl.innerHTML=s.join('');
-  var at=Date.parse(d.at||'')||0,min=at?Math.round((Date.now()-at)/60000):null;
-  ageEl.textContent=(d.atText||'')+(min!=null?'  ('+(min<1?dict.now:min+' '+dict.minSuffix)+')':'');
-  ageEl.className=(min!=null&&min>15)?'stale':'';
+  updateAge();
   bindCardImages();
 }
 // --- Zapis koristenja (po osobi) ---
@@ -387,6 +408,7 @@ document.getElementById('reload').addEventListener('click',load);
 document.addEventListener('visibilitychange',function(){if(document.hidden){writeVisit('beat')}else{load();writeVisit('beat')}});
 window.addEventListener('pagehide',function(){writeVisit('beat')});
 setInterval(load,30000);
+setInterval(updateAge,30000);
 setInterval(function(){if(!document.hidden)writeVisit('beat')},5*60*1000);
 writeVisit('open');
 applyStaticText();
