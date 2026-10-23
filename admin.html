@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0f172a">
 <!-- Admin stranica: kao user stranica (mobile-status.html), ali s trazenjem analize i pregledima. Aplikacija je NE objavljuje
      automatski (auto-objava dira samo cfg.page = index.html), pa se gura rucno preko gh/GitHuba. -->
-<meta name="flexcell-page-version" content="2.5.48">
+<meta name="flexcell-page-version" content="2.5.52">
 <title>Flexcell - admin</title>
 <style>
 :root{--bg:#0f172a;--card:#1e293b;--line:#334155;--txt:#e2e8f0;--dim:#94a3b8;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--idle:#64748b}
@@ -89,11 +89,20 @@ body.offline #cards,body.offline #sum{filter:blur(3px);opacity:.55}
 #offline .box{text-align:center;padding:16px 26px;border-radius:16px;border:1px solid #7f1d1d;background:rgba(15,23,42,.88);box-shadow:0 10px 40px rgba(0,0,0,.5)}
 #offline b{display:block;font-size:34px;font-weight:900;letter-spacing:.12em;color:var(--bad)}
 #offline span{display:block;margin-top:4px;font-size:13px;color:var(--dim)}
+/* Android aplikacija (window.AndroidApp): admin dijelovi idu u postavke, zvonce za obavijesti u zaglavlju. */
+#bell.on{background:#14532d;border-color:#166534}
+body.app h1{flex:0 0 auto}
+body.app #age{flex:1;min-width:0;white-space:normal;text-align:right;line-height:1.2}
+#appBox .chk{display:flex;align-items:center;gap:9px;font-size:13px;margin:8px 0}
+#appBox .chk input{width:18px;height:18px;margin:0}
+#appBox .warnline{font-size:12px;color:var(--warn);margin:6px 0}
+#appBox .row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+#appBox .dimline{font-size:12px;color:var(--dim);margin-top:8px}
 [hidden]{display:none!important}
 </style>
 </head>
 <body>
-<header><h1 id="h1Title">Flexcell - admin</h1><div id="age">ucitavam...</div><button id="langBtn" class="lang" title="Jezik / Sprache">DE</button><button id="gear" class="gear" title="Postavke">&#9881;</button></header>
+<header><h1 id="h1Title">Flexcell - admin</h1><div id="age">ucitavam...</div><button id="bell" class="gear" hidden>&#128277;</button><button id="langBtn" class="lang" title="Jezik / Sprache">DE</button><button id="gear" class="gear" title="Postavke">&#9881;</button></header>
 <div id="setup" class="card" hidden>
   <div id="setupHeading" style="font-weight:700;margin-bottom:2px">Postavke</div>
   <label id="lblRepo" hidden>Privatni repo s podacima (korisnik/repo)</label><input id="cfgRepo" placeholder="korisnik/flexcell-stanje" autocapitalize="off" autocorrect="off" spellcheck="false" hidden>
@@ -102,6 +111,18 @@ body.offline #cards,body.offline #sum{filter:blur(3px);opacity:.55}
   <label id="lblToken">Token s pravom pisanja</label><input id="cfgToken" type="password" placeholder="github_pat_..." autocapitalize="off" autocorrect="off" spellcheck="false">
   <div class="row"><button id="cfgSave" class="pri">Spremi</button></div>
   <div id="setupHint" class="hint" hidden>Ova stranica salje zahtjev racunalu, pa token treba pravo <code>Contents: Read and write</code> na <b>privatni</b> repo s podacima. Token ostaje spremljen samo na ovom mobitelu.</div>
+</div>
+<div id="appBox" hidden>
+<div id="notif" class="card">
+  <div class="anahead"><span id="notifTitle" style="font-weight:700">Obavijesti</span><span id="notifState" class="anastate"></span></div>
+  <label class="chk"><input id="notifStop" type="checkbox"><span id="notifStopLbl"></span></label>
+  <label class="chk"><input id="notifOff" type="checkbox"><span id="notifOffLbl"></span></label>
+  <div id="notifPerm" class="warnline" hidden></div>
+  <div id="notifBat" class="warnline" hidden></div>
+  <div class="row"><button id="notifPermBtn" hidden></button><button id="notifBatBtn" hidden></button><button id="notifTest"></button></div>
+  <div id="appVer" class="dimline"></div>
+  <div class="row"><button id="appUpd"></button></div>
+</div>
 </div>
 <div id="cards"></div>
 <div id="ana" class="card">
@@ -193,7 +214,24 @@ var I18N={
     useDur:'ukupno',
     useOnline:'sada online',
     useNever:'-',
-    useLoadFail:'popis koristenja nije ucitan'
+    useLoadFail:'popis koristenja nije ucitan',
+    bellOn:'Obavijesti ukljucene - dodir iskljucuje',
+    bellOff:'Obavijesti iskljucene - dodir ukljucuje',
+    notifTitle:'Obavijesti',
+    notifOn:'ukljucene',
+    notifOffState:'iskljucene',
+    notifStop:'kad stroj stane (stoj, pauza, gotov)',
+    notifOffline:'kad racunalo ne salje podatke (OFFLINE)',
+    notifPerm:'Android ne dopusta obavijesti ovoj aplikaciji.',
+    notifPermBtn:'Dozvoli obavijesti',
+    notifBat:'Stednja baterije moze odgoditi provjere dok je mobitel zakljucan.',
+    notifBatBtn:'Iskljuci stednju baterije',
+    notifTest:'Probna obavijest',
+    notifNoToken:'prvo upisi token',
+    appVer:function(v){return 'aplikacija '+v},
+    appUpd:'Provjeri nadogradnju',
+    appUpdState:{ide:'nova stranica, ucitavam...',nema:'vec je najnovije',greska:'provjera nije uspjela',preuzimam:'preuzimam...',dopustenje:'dozvoli instalaciju pa ponovi','greska-instalacija':'instalacija nije uspjela'},
+    saved:'spremljeno'
   },
   de:{
     pageTitle:'Flexcell - Admin',
@@ -258,7 +296,24 @@ var I18N={
     useDur:'gesamt',
     useOnline:'gerade online',
     useNever:'-',
-    useLoadFail:'Nutzungsliste nicht geladen'
+    useLoadFail:'Nutzungsliste nicht geladen',
+    bellOn:'Benachrichtigungen an - tippen zum Ausschalten',
+    bellOff:'Benachrichtigungen aus - tippen zum Einschalten',
+    notifTitle:'Benachrichtigungen',
+    notifOn:'an',
+    notifOffState:'aus',
+    notifStop:'wenn eine Maschine stoppt (Gestoppt, Pause, Fertig)',
+    notifOffline:'wenn der PC keine Daten sendet (OFFLINE)',
+    notifPerm:'Android erlaubt dieser App keine Benachrichtigungen.',
+    notifPermBtn:'Benachrichtigungen erlauben',
+    notifBat:'Der Akku-Sparmodus kann die Prüfung bei gesperrtem Handy verzögern.',
+    notifBatBtn:'Akku-Optimierung ausschalten',
+    notifTest:'Testbenachrichtigung',
+    notifNoToken:'zuerst Token eintragen',
+    appVer:function(v){return 'App '+v},
+    appUpd:'Nach Update suchen',
+    appUpdState:{ide:'neue Seite, lade...',nema:'bereits aktuell',greska:'Prüfung fehlgeschlagen',preuzimam:'lade herunter...',dopustenje:'Installation erlauben und wiederholen','greska-instalacija':'Installation fehlgeschlagen'},
+    saved:'gespeichert'
   }
 };
 var q=new URLSearchParams(location.search);
@@ -310,7 +365,7 @@ function applyStaticText(){
   var d=t();
   document.title=d.pageTitle;
   document.documentElement.lang=lang;
-  document.getElementById('h1Title').textContent=d.pageTitle;
+  document.getElementById('h1Title').textContent=window.AndroidApp?'Flexcell':d.pageTitle;
   document.getElementById('gear').title=d.gearTitle;
   document.getElementById('setupHeading').textContent=d.setupHeading;
   document.getElementById('lblRepo').textContent=d.lblRepo;
@@ -579,6 +634,12 @@ function downloadAna(row,btn){
     }
     return{blob:new Blob([buf]),name:row.name};
   }).then(function(o){
+    if(APP&&APP.spremi){
+      return new Promise(function(res){var fr=new FileReader();fr.onload=function(){res(String(fr.result||''))};fr.readAsDataURL(o.blob)}).then(function(du){
+        APP.spremi(o.name,String(du).replace(/^data:[^,]*,/,''));
+        btn.disabled=false;btn.textContent=old;
+      });
+    }
     var u=URL.createObjectURL(o.blob),a=document.createElement('a');
     a.href=u;a.download=o.name;document.body.appendChild(a);a.click();
     setTimeout(function(){URL.revokeObjectURL(u);a.remove()},1500);
@@ -595,7 +656,7 @@ function openSetup(){
   document.getElementById('cfgToken').value=cfg.token||'';
   setupEl.hidden=false;
 }
-document.getElementById('gear').addEventListener('click',function(){setupEl.hidden?openSetup():setupEl.hidden=true});
+document.getElementById('gear').addEventListener('click',function(){if(setupEl.hidden){openSetup();appBoxEl.hidden=!APP;appRefresh()}else{setupEl.hidden=true;appBoxEl.hidden=true}});
 document.getElementById('cfgSave').addEventListener('click',function(){
   cfg={
     repo:slug(document.getElementById('cfgRepo').value),
@@ -605,6 +666,8 @@ document.getElementById('cfgSave').addEventListener('click',function(){
   };
   saveCfg(cfg);
   setupEl.hidden=true;
+  appBoxEl.hidden=true;
+  appSync();
   load();
   loadAnaList();
 });
@@ -615,6 +678,8 @@ document.getElementById('langBtn').addEventListener('click',function(){
   if(lastData)render(lastData);
   tickPending();
   loadAnaList();
+  appSync();
+  appRefresh();
 });
 document.getElementById('reload').addEventListener('click',function(){load();loadAnaList();loadVisits()});
 // --- Koristenje: admin cita cache/<id>.json i prikazuje po osobi ---
@@ -669,6 +734,67 @@ function loadVisits(){
 function setUseState(txt,cls){useStateEl.textContent=txt||'';useStateEl.className='anastate'+(cls?' '+cls:'')}
 anaBtn.addEventListener('click',sendRequest);
 document.addEventListener('visibilitychange',function(){if(!document.hidden){load();pollAnswer();loadAnaList();loadVisits()}});
+// --- Android aplikacija ---
+// Ljuska (APK) daje window.AndroidApp. Tada su Analiza i Koristenje u postavkama (zupcanik), a zvonce
+// u zaglavlju pali/gasi obavijesti. Provjeru stanja radi sama aplikacija u pozadini (i kad je zatvorena),
+// zato joj se ovdje predaju postavke repoa i token (ostaju na mobitelu).
+var APP=window.AndroidApp||null;
+var appBoxEl=document.getElementById('appBox'),bellEl=document.getElementById('bell');
+function appState(){try{return JSON.parse(APP.obavijestiStanje()||'{}')||{}}catch(e){return{}}}
+function appSync(){
+  if(!APP)return;
+  try{APP.postavke(JSON.stringify({repo:slug(cfg.repo),path:cfg.path||'stanje.json',branch:cfg.branch||'main',token:String(cfg.token||'').trim(),lang:lang}))}catch(e){}
+}
+function appRefresh(){
+  if(!APP)return;
+  var d=t(),st=appState(),on=!!st.ukljuceno;
+  bellEl.innerHTML=on?'&#128276;':'&#128277;';
+  bellEl.className='gear'+(on?' on':'');
+  bellEl.title=on?d.bellOn:d.bellOff;
+  document.getElementById('notifTitle').textContent=d.notifTitle;
+  var ns=document.getElementById('notifState');
+  ns.textContent=!String(cfg.token||'').trim()?d.notifNoToken:(on?d.notifOn:d.notifOffState);
+  ns.className='anastate'+(on?' ok':'');
+  document.getElementById('notifStopLbl').textContent=d.notifStop;
+  document.getElementById('notifOffLbl').textContent=d.notifOffline;
+  document.getElementById('notifStop').checked=on;
+  document.getElementById('notifOff').checked=st.offline!==false;
+  var perm=on&&st.dozvola===false,bat=on&&st.baterija===false;
+  document.getElementById('notifPerm').hidden=!perm;document.getElementById('notifPerm').textContent=d.notifPerm;
+  document.getElementById('notifPermBtn').hidden=!perm;document.getElementById('notifPermBtn').textContent=d.notifPermBtn;
+  document.getElementById('notifBat').hidden=!bat;document.getElementById('notifBat').textContent=d.notifBat;
+  document.getElementById('notifBatBtn').hidden=!bat;document.getElementById('notifBatBtn').textContent=d.notifBatBtn;
+  document.getElementById('notifTest').textContent=d.notifTest;
+  document.getElementById('appUpd').textContent=d.appUpd;
+  var v='';try{v=APP.verzija()}catch(e){}
+  document.getElementById('appVer').textContent=d.appVer(v)+(pageVer()?' · '+d.version+' '+pageVer():'');
+}
+function pageVer(){var m=document.querySelector('meta[name="flexcell-page-version"]');return m?String(m.getAttribute('content')||''):''}
+function appSetOn(on){
+  if(!APP)return;
+  if(on&&!String(cfg.token||'').trim()){openSetup();appBoxEl.hidden=false;appRefresh();return}
+  appSync();
+  try{APP.obavijesti(!!on)}catch(e){}
+  appRefresh();
+}
+// Ljuska javlja ishod (dozvola obavijesti / povratak u aplikaciju, nadogradnja).
+window.FX_OBAVIJESTI=function(){appRefresh()};
+window.FX_NADOGRADNJA=function(s){var m=t().appUpdState;document.getElementById('appVer').textContent=m[s]||s};
+if(APP){
+  document.body.classList.add('app');
+  bellEl.hidden=false;
+  appBoxEl.appendChild(document.getElementById('ana'));
+  appBoxEl.appendChild(document.getElementById('use'));
+  bellEl.addEventListener('click',function(){appSetOn(!appState().ukljuceno)});
+  document.getElementById('notifStop').addEventListener('change',function(e){appSetOn(e.target.checked)});
+  document.getElementById('notifOff').addEventListener('change',function(e){try{APP.obavijestiOffline(e.target.checked)}catch(x){}appRefresh()});
+  document.getElementById('notifPermBtn').addEventListener('click',function(){try{APP.dozvola()}catch(e){}});
+  document.getElementById('notifBatBtn').addEventListener('click',function(){try{APP.baterija()}catch(e){}});
+  document.getElementById('notifTest').addEventListener('click',function(){try{APP.proba()}catch(e){}});
+  document.getElementById('appUpd').addEventListener('click',function(){try{APP.nadogradi()}catch(e){}});
+  appSync();
+  appRefresh();
+}
 setInterval(load,30000);
 setInterval(updateAge,30000);
 setInterval(pollAnswer,POLL_MS);
