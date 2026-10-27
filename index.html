@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0f172a">
 <!-- Verziju upisuje aplikacija pri objavi; po njoj zna je li objavljena stranica starija od njene. -->
-<meta name="flexcell-page-version" content="2.5.48">
+<meta name="flexcell-page-version" content="2.5.54">
 <title>Flexcell - stanje</title>
 <style>
 :root{--bg:#0f172a;--card:#1e293b;--line:#334155;--txt:#e2e8f0;--dim:#94a3b8;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--idle:#64748b}
@@ -48,6 +48,10 @@ h1{margin:0;font-size:17px;letter-spacing:.02em;flex:1}
 button{appearance:none;border:1px solid var(--line);background:#0b1220;color:var(--txt);font:600 13px inherit;padding:9px 14px;border-radius:10px}
 button.pri{background:#1d4ed8;border-color:#1d4ed8;color:#fff}
 footer{display:flex;align-items:center;gap:10px;margin-top:14px}
+/* Oznaka u kutu: odakle stranica cita podatke + je li zadnje citanje uspjelo */
+#srcBadge{position:fixed;left:8px;bottom:6px;z-index:30;display:flex;align-items:center;gap:5px;font-size:11px;line-height:1;padding:4px 8px;border-radius:10px;background:rgba(30,41,59,.92);border:1px solid var(--line);color:var(--dim);pointer-events:none}
+#srcBadge i{width:7px;height:7px;border-radius:50%;background:var(--idle)}
+#srcBadge.ok i{background:var(--ok)}#srcBadge.bad i{background:var(--bad)}
 #err{color:var(--bad);font-size:13px;margin:6px 4px}
 #setup label{display:block;font-size:12px;color:var(--dim);margin:9px 0 3px}
 #setup input{width:100%;padding:10px;border-radius:9px;border:1px solid var(--line);background:#0b1220;color:var(--txt);font:15px inherit}
@@ -79,6 +83,7 @@ body.offline #cards,body.offline #sum{filter:blur(3px);opacity:.55}
 <div id="sum" class="sum"></div>
 <div id="err"></div>
 <footer><button id="reload">Osvjezi</button><span id="src" style="font-size:11px;color:var(--dim)"></span></footer>
+<div id="srcBadge"><i></i><span id="srcBadgeTxt"></span></div>
 <div id="offline" hidden><div class="box"><b>OFFLINE</b><span id="offlineSub"></span></div></div>
 <div id="lb" hidden><img id="lbimg" alt=""><div id="lbnote"></div></div>
 <script>
@@ -120,6 +125,7 @@ var I18N={
     langBtn:'DE',
     errTokenRejected:function(s){return 'token nije prihvacen (HTTP '+s+') - provjeri postavke'},
     errNoFile:'nema datoteke ili token nema pristup repou (404)',
+    srcLabel:'izvor',srcLocal:'lokalna datoteka',
     errHttp:function(s){return 'HTTP '+s},
     errBadJson:'neispravan JSON',
     errFetchPrefix:'Ne mogu dohvatiti podatke: '
@@ -160,6 +166,7 @@ var I18N={
     langBtn:'HR',
     errTokenRejected:function(s){return 'Token nicht akzeptiert (HTTP '+s+') - Einstellungen prüfen'},
     errNoFile:'Datei fehlt oder Token hat keinen Zugriff auf das Repo (404)',
+    srcLabel:'Quelle',srcLocal:'lokale Datei',
     errHttp:function(s){return 'HTTP '+s},
     errBadJson:'ungültiges JSON',
     errFetchPrefix:'Daten können nicht abgerufen werden: '
@@ -351,6 +358,14 @@ document.addEventListener('keydown',function(e){if(!lb.hidden&&(e.key==='Escape'
 function fail(msg){errEl.textContent=msg}
 // Privatni repo se cita preko contents API-ja (Accept: raw vraca sam sadrzaj datoteke).
 // Ako token nije unesen, stranica pada na obicnu datoteku uz sebe - za javni repo / lokalni server.
+// Oznaka u kutu: kind = 'github' | 'local' (kasnije 'supabase'), st = '' (ucitava) | 'ok' | 'bad'.
+var srcKind='',srcTitle='',srcSt='';
+function setSrcBadge(kind,st,title){
+  if(kind)srcKind=kind;if(title!=null)srcTitle=title;if(st!=null)srcSt=st;
+  var el=document.getElementById('srcBadge'),tx=document.getElementById('srcBadgeTxt');if(!el||!tx)return;
+  var name=srcKind==='github'?'GitHub':srcKind==='supabase'?'Supabase':t().srcLocal;
+  tx.textContent=t().srcLabel+': '+name;el.className=srcSt||'';el.title=srcTitle||'';
+}
 function load(){
   errEl.textContent='';
   var repo=slug(cfg.repo),token=String(cfg.token||'').trim();
@@ -360,10 +375,12 @@ function load(){
        +'?ref='+encodeURIComponent(cfg.branch||'main')+'&t='+Date.now();
     opt.headers={Authorization:'Bearer '+token,Accept:'application/vnd.github.raw','X-GitHub-Api-Version':'2022-11-28'};
     srcEl.textContent=repo+'/'+(cfg.path||'stanje.json');
+    setSrcBadge('github','',srcEl.textContent);
   }else{
     var f=SRC||'stanje.json';
     url=f+(f.indexOf('?')<0?'?':'&')+'t='+Date.now();
     srcEl.textContent=f;
+    setSrcBadge('local','',f);
   }
   fetch(url,opt).then(function(r){
     var dict=t();
@@ -374,8 +391,10 @@ function load(){
   }).then(function(txt){
     var d;try{d=JSON.parse(txt)}catch(e){throw new Error(t().errBadJson)}
     render(d);
+    setSrcBadge('','ok');
   }).catch(function(e){
     fail(t().errFetchPrefix+(e&&e.message||e));
+    setSrcBadge('','bad');
     if(!slug(cfg.repo)||!String(cfg.token||'').trim())openSetup();
   });
 }
@@ -403,6 +422,7 @@ document.getElementById('langBtn').addEventListener('click',function(){
   saveLang(lang);
   applyStaticText();
   if(lastData)render(lastData);
+  setSrcBadge();
 });
 document.getElementById('reload').addEventListener('click',load);
 document.addEventListener('visibilitychange',function(){if(document.hidden){writeVisit('beat')}else{load();writeVisit('beat')}});
