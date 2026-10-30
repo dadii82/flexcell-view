@@ -315,13 +315,13 @@ function writeVisit(kind){
      var prev={},sha='';
      if(j){sha=String(j.sha||'');try{prev=JSON.parse(decodeURIComponent(escape(atob(String(j.content||'').replace(/\s+/g,'')))))}catch(e){}}
      var iso=new Date(now).toISOString();
-     // Pamte se samo vremena zadnja 3 otvaranja (bez broja otvaranja i ukupnog trajanja);
+     // Pamte se samo vremena zadnjih 6 otvaranja (bez broja otvaranja i ukupnog trajanja);
      // stari zapis (sessions) se pri prvom upisu pretvori u views.
      var views=mergeViews((prev.views&&prev.views.slice)?prev.views.slice():((prev.sessions&&prev.sessions.map)?prev.sessions.map(function(x){return x&&x.s}).filter(Boolean):[]));
      // Ponovno otvaranje unutar 2 min od zadnjeg gledanja/aktivnosti (last pise i zatvaranje) nije novo gledanje.
      var prevMs=Math.max(Date.parse(prev.last||'')||0,Date.parse(views[views.length-1]||'')||0);
      if(kind==='open'&&!visitStartedThisLoad){visitStartedThisLoad=true;if(!(prevMs&&now-prevMs<2*60*1000))views.push(iso);}
-     var rec={id:id,tail:tokenTail(tok),last:iso,views:views.slice(-3),ver:pageVer(),page:PAGE_ROLE};
+     var rec={id:id,tail:tokenTail(tok),last:iso,views:views.slice(-6),ver:pageVer(),page:PAGE_ROLE};
      var chdr=ghVHdr(tok);chdr['Content-Type']='application/json';
      var body={message:'koristenje '+id.slice(0,6),content:btoa(unescape(encodeURIComponent(JSON.stringify(rec)))),branch:cfg.branch||'main'};
      if(sha)body.sha=sha;
