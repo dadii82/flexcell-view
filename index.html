@@ -291,6 +291,14 @@ function tokenFingerprint(tok){
 function tokenTail(tok){tok=String(tok||'');return tok?tok.slice(-4):''}
 function ghVHdr(tok,accept){return{Authorization:'Bearer '+tok,Accept:accept||'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}}
 var visitSessionStart=Date.now(),visitLastWrite=0,visitStartedThisLoad=false;
+// Gledanja razmaknuta manje od 2 min od prethodnog su isto gledanje (ostaje prvo).
+function mergeViews(v){
+  var out=[],prev=0;
+  (v||[]).map(function(x){return Date.parse(x||'')||0}).filter(Boolean).sort(function(a,b){return a-b}).forEach(function(ms){
+    if(!prev||ms-prev>=2*60*1000)out.push(new Date(ms).toISOString());prev=ms;
+  });
+  return out;
+}
 function writeVisit(kind){
   var repo=slug(cfg.repo),tok=String(cfg.token||'').trim();
   if(!repo||!tok)return;
@@ -309,7 +317,7 @@ function writeVisit(kind){
      var iso=new Date(now).toISOString();
      // Pamte se samo vremena zadnja 3 otvaranja (bez broja otvaranja i ukupnog trajanja);
      // stari zapis (sessions) se pri prvom upisu pretvori u views.
-     var views=(prev.views&&prev.views.slice)?prev.views.slice():((prev.sessions&&prev.sessions.map)?prev.sessions.map(function(x){return x&&x.s}).filter(Boolean):[]);
+     var views=mergeViews((prev.views&&prev.views.slice)?prev.views.slice():((prev.sessions&&prev.sessions.map)?prev.sessions.map(function(x){return x&&x.s}).filter(Boolean):[]));
      // Ponovno otvaranje unutar 2 min od zadnjeg gledanja/aktivnosti (last pise i zatvaranje) nije novo gledanje.
      var prevMs=Math.max(Date.parse(prev.last||'')||0,Date.parse(views[views.length-1]||'')||0);
      if(kind==='open'&&!visitStartedThisLoad){visitStartedThisLoad=true;if(!(prevMs&&now-prevMs<2*60*1000))views.push(iso);}
