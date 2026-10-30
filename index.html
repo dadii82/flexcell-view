@@ -307,11 +307,11 @@ function writeVisit(kind){
      var prev={},sha='';
      if(j){sha=String(j.sha||'');try{prev=JSON.parse(decodeURIComponent(escape(atob(String(j.content||'').replace(/\s+/g,'')))))}catch(e){}}
      var iso=new Date(now).toISOString();
-     var sessions=(prev.sessions&&prev.sessions.slice)?prev.sessions.slice(-19):[];
-     if(kind==='open'&&!visitStartedThisLoad){visitStartedThisLoad=true;sessions.push({s:iso,d:0});}
-     if(sessions.length){sessions[sessions.length-1].d=Math.max(0,Math.round((now-visitSessionStart)/1000));sessions[sessions.length-1].l=iso;}
-     var rec={id:id,tail:tokenTail(tok),first:prev.first||iso,last:iso,
-              opens:(Number(prev.opens)||0)+(kind==='open'?1:0),sessions:sessions,ver:pageVer(),page:PAGE_ROLE};
+     // Pamte se samo vremena zadnja 3 otvaranja (bez broja otvaranja i ukupnog trajanja);
+     // stari zapis (sessions) se pri prvom upisu pretvori u views.
+     var views=(prev.views&&prev.views.slice)?prev.views.slice():((prev.sessions&&prev.sessions.map)?prev.sessions.map(function(x){return x&&x.s}).filter(Boolean):[]);
+     if(kind==='open'&&!visitStartedThisLoad){visitStartedThisLoad=true;views.push(iso);}
+     var rec={id:id,tail:tokenTail(tok),last:iso,views:views.slice(-3),ver:pageVer(),page:PAGE_ROLE};
      var chdr=ghVHdr(tok);chdr['Content-Type']='application/json';
      var body={message:'koristenje '+id.slice(0,6),content:btoa(unescape(encodeURIComponent(JSON.stringify(rec)))),branch:cfg.branch||'main'};
      if(sha)body.sha=sha;
