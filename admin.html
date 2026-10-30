@@ -715,11 +715,11 @@ function mergeViews(v){
   });
   return out;
 }
-// Zadnja 3 gledanja (najnovije prvo); stari zapisi imaju sessions[].s umjesto views.
+// Zadnjih 6 gledanja (najnovije prvo); stari zapisi imaju sessions[].s umjesto views.
 function lastViews(rec){
   var v=(rec&&rec.views&&rec.views.slice)?rec.views.slice():(((rec&&rec.sessions)||[]).map(function(x){return x&&x.s}).filter(Boolean));
   var p=function(n){return(n<10?'0':'')+n};
-  return mergeViews(v).slice(-3).reverse().map(function(iso){var dt=new Date(iso);return isNaN(dt)?'':p(dt.getDate())+'.'+p(dt.getMonth()+1)+'. '+p(dt.getHours())+':'+p(dt.getMinutes())}).filter(Boolean).join('  ·  ');
+  return mergeViews(v).slice(-6).reverse().map(function(iso){var dt=new Date(iso);return isNaN(dt)?'':p(dt.getDate())+'.'+p(dt.getMonth()+1)+'. '+p(dt.getHours())+':'+p(dt.getMinutes())}).filter(Boolean).join('  ·  ');
 }
 function renderVisits(rows){
   var d=t(),names=loadVNames();
