@@ -66,14 +66,16 @@ select{appearance:none;border:1px solid var(--line);background:#0b1220;color:var
 .anaitem button{padding:6px 11px;font-size:12px;white-space:nowrap}
 .analistempty{font-size:12px;color:var(--dim);padding:4px 0}
 .uselist{margin-top:4px}
-.useitem{display:flex;align-items:center;gap:8px;padding:7px 0;font-size:13px;border-bottom:1px solid rgba(51,65,85,.55)}
+.useitem{padding:10px 0;font-size:13px;border-bottom:1px solid rgba(51,65,85,.55)}
 .useitem:last-child{border-bottom:0}
-.useitem .who{flex:1;min-width:0}
-.useitem .who b{display:block;font-weight:700;color:var(--txt)}
-.useitem .who span{color:var(--dim);font-size:11px}
-.useitem .st{text-align:right;color:var(--dim);font-size:11px;white-space:nowrap}
-.useitem .st b{color:var(--txt);font-weight:700}
-.useitem input{width:96px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:#0b1220;color:var(--txt);font:13px inherit}
+.useitem .uhead{display:flex;align-items:center;gap:8px}
+.useitem input{flex:1;min-width:0;padding:7px 9px;border-radius:8px;border:1px solid var(--line);background:#0b1220;color:var(--txt);font:600 14px inherit}
+.useitem .ubadge{flex:0 0 auto;padding:4px 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap;background:rgba(51,65,85,.6);color:var(--txt)}
+.useitem .ubadge.on{background:rgba(22,163,74,.22);color:#4ade80}
+.useitem .umeta{margin-top:5px;color:var(--dim);font-size:11px}
+.useitem .uviews{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.useitem .uviews span{padding:3px 7px;border-radius:6px;background:#0b1220;border:1px solid var(--line);color:var(--txt);font-size:11px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.useitem .uviews span:first-child{border-color:#3b82f6}
 .useempty{font-size:12px;color:var(--dim);padding:4px 0}
 footer{display:flex;align-items:center;gap:10px;margin-top:14px}
 /* Oznaka u kutu: odakle stranica cita podatke + je li zadnje citanje uspjelo */
@@ -719,7 +721,7 @@ function mergeViews(v){
 function lastViews(rec){
   var v=(rec&&rec.views&&rec.views.slice)?rec.views.slice():(((rec&&rec.sessions)||[]).map(function(x){return x&&x.s}).filter(Boolean));
   var p=function(n){return(n<10?'0':'')+n};
-  return mergeViews(v).slice(-6).reverse().map(function(iso){var dt=new Date(iso);return isNaN(dt)?'':p(dt.getDate())+'.'+p(dt.getMonth()+1)+'. '+p(dt.getHours())+':'+p(dt.getMinutes())}).filter(Boolean).join('  ·  ');
+  return mergeViews(v).slice(-6).reverse().map(function(iso){var dt=new Date(iso);return isNaN(dt)?'':p(dt.getDate())+'.'+p(dt.getMonth()+1)+'. '+p(dt.getHours())+':'+p(dt.getMinutes())}).filter(Boolean);
 }
 function renderVisits(rows){
   var d=t(),names=loadVNames();
@@ -728,11 +730,12 @@ function renderVisits(rows){
     var lastMs=Date.parse(r.last||'')||0,online=lastMs&&(Date.now()-lastMs)<7*60000;
     var relTxt=lastMs?(online?d.useOnline:( (function(){var min=Math.round((Date.now()-lastMs)/60000);return min<60?min+' '+d.minSuffix:(min<1440?Math.round(min/60)+' h':Math.round(min/1440)+' d')})() )):d.useNever;
     var nm=names[r.id]||'';
-    return '<div class="useitem"><span class="who">'
+    var views=lastViews(r);
+    return '<div class="useitem"><div class="uhead">'
       +'<input data-id="'+esc(r.id)+'" placeholder="'+esc(d.useName)+'" value="'+esc(nm)+'">'
-      +'<span>token …'+esc(r.tail||'????')+(r.ver?'  ·  v'+esc(r.ver):'')+'</span></span>'
-      +'<span class="st"><b>'+(online?d.useOnline:d.useLast+' '+relTxt)+'</b><br>'
-      +d.useViews+' '+esc(lastViews(r)||'-')+'</span></div>';
+      +'<span class="ubadge'+(online?' on':'')+'">'+esc(online?d.useOnline:d.useLast+' '+relTxt)+'</span></div>'
+      +'<div class="umeta">token …'+esc(r.tail||'????')+(r.ver?'  ·  v'+esc(r.ver):'')+'  ·  '+esc(d.useViews.replace(/:$/,''))+'</div>'
+      +'<div class="uviews">'+(views.length?views.map(function(x){return '<span>'+esc(x)+'</span>'}).join(''):'<span>-</span>')+'</div></div>';
   }).join('');
   Array.prototype.forEach.call(useListEl.querySelectorAll('input[data-id]'),function(inp){
     inp.addEventListener('change',function(){saveVName(inp.getAttribute('data-id'),String(inp.value||'').trim())});
