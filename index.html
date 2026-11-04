@@ -290,7 +290,7 @@ function tokenFingerprint(tok){
 }
 function tokenTail(tok){tok=String(tok||'');return tok?tok.slice(-4):''}
 function ghVHdr(tok,accept){return{Authorization:'Bearer '+tok,Accept:accept||'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}}
-var visitSessionStart=Date.now(),visitLastWrite=0,visitStartedThisLoad=false;
+var visitSessionStart=Date.now(),visitLastWrite=0,visitStartedThisLoad=false,visitHiddenAt=0;
 // Gledanja razmaknuta manje od 2 min od prethodnog su isto gledanje (ostaje prvo).
 function mergeViews(v){
   var out=[],prev=0;
@@ -303,8 +303,8 @@ function writeVisit(kind){
   var repo=slug(cfg.repo),tok=String(cfg.token||'').trim();
   if(!repo||!tok)return;
   var now=Date.now();
-  // "open" pise uvijek; heartbeat najvise svakih 5 min, da repo ne dobije gomilu commitova.
-  if(kind!=='open'&&now-visitLastWrite<5*60*1000)return;
+  // "open" i "return" (povratak na otvorenu stranicu) pisu uvijek; heartbeat najvise svakih 5 min, da repo ne dobije gomilu commitova.
+  if(kind==='beat'&&now-visitLastWrite<5*60*1000)return;
   visitLastWrite=now;
   var id=tokenFingerprint(tok),path='cache/'+id+'.json';
   var url='https://api.github.com/repos/'+repo+'/contents/'+encodeURI(path);
@@ -321,6 +321,8 @@ function writeVisit(kind){
      // Ponovno otvaranje unutar 2 min od zadnjeg gledanja/aktivnosti (last pise i zatvaranje) nije novo gledanje.
      var prevMs=Math.max(Date.parse(prev.last||'')||0,Date.parse(views[views.length-1]||'')||0);
      if(kind==='open'&&!visitStartedThisLoad){visitStartedThisLoad=true;if(!(prevMs&&now-prevMs<2*60*1000))views.push(iso);}
+     // Povratak nakon barem 2 min izvan stranice je novo gledanje (provjereno u visibilitychange).
+     if(kind==='return')views.push(iso);
      var rec={id:id,tail:tokenTail(tok),last:iso,views:views.slice(-6),ver:pageVer(),page:PAGE_ROLE};
      var chdr=ghVHdr(tok);chdr['Content-Type']='application/json';
      var body={message:'koristenje '+id.slice(0,6),content:btoa(unescape(encodeURIComponent(JSON.stringify(rec)))),branch:cfg.branch||'main'};
@@ -435,8 +437,11 @@ document.getElementById('langBtn').addEventListener('click',function(){
   setSrcBadge();
 });
 document.getElementById('reload').addEventListener('click',load);
-document.addEventListener('visibilitychange',function(){if(document.hidden){writeVisit('beat')}else{load();writeVisit('beat')}});
-window.addEventListener('pagehide',function(){writeVisit('beat')});
+document.addEventListener('visibilitychange',function(){
+  if(document.hidden){visitHiddenAt=Date.now();writeVisit('beat')}
+  else{load();var back=visitHiddenAt&&Date.now()-visitHiddenAt>=2*60*1000;visitHiddenAt=0;writeVisit(back?'return':'beat')}
+});
+window.addEventListener('pagehide',function(){if(!visitHiddenAt)visitHiddenAt=Date.now();writeVisit('beat')});
 setInterval(load,30000);
 setInterval(updateAge,30000);
 setInterval(function(){if(!document.hidden)writeVisit('beat')},5*60*1000);
