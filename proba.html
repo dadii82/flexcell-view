@@ -56,10 +56,13 @@ h1{margin:0;font-size:17px;letter-spacing:.02em;flex:1}
 #tl .trow .n{flex:1;min-width:0}
 #tl .trow .n small{display:block;color:var(--dim);font-size:11px}
 #tl .trow .v{white-space:nowrap;font-weight:700;font-variant-numeric:tabular-nums}
+#tl .tlimg{margin:0 0 6px;border-radius:12px;border:1px solid var(--line);background:#fff;overflow:hidden;cursor:zoom-in;min-height:120px;display:flex;align-items:center;justify-content:center}
+#tl .tlimg img{display:block;width:100%;height:auto;max-height:62vh;object-fit:contain}
+#tl .tlimg span{color:#64748b;font-size:13px;padding:20px}
 #tl .tnone{color:var(--dim);font-size:13px;padding:6px 0}
-#lb{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:10px;background:rgba(2,6,23,.94);cursor:zoom-out}
+#lb{position:fixed;inset:0;z-index:62;display:flex;align-items:center;justify-content:center;padding:10px;background:rgba(2,6,23,.94);cursor:zoom-out}
 #lb[hidden]{display:none}
-#lb img{width:auto;height:auto;max-width:min(300px,86vw);max-height:min(300px,70vh);border-radius:10px;border:1px solid var(--line);background:#0b1220}
+#lb img{width:96vw;height:auto;max-width:96vw;max-height:90vh;object-fit:contain;background:#fff;border-radius:10px;border:1px solid var(--line);background:#0b1220}
 #lbnote{position:absolute;left:0;right:0;bottom:18px;text-align:center;font-size:13px;color:var(--dim)}
 .sum{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--dim);padding:2px 4px}
 .sum b{color:var(--txt)}
@@ -129,7 +132,7 @@ var I18N={
     setupHint:'Podaci su u <b>privatnom</b> repou, pa ih ova stranica cita preko GitHub API-ja i za to treba token. Na GitHubu: <code>Settings &rarr; Developer settings &rarr; Fine-grained tokens</code>, pristup samo tom repou, pravo <code>Contents: Read-only</code>. Token ostaje spremljen samo na ovom mobitelu.',
     btnReload:'Osvjezi',
     noMachines:'Nema podataka o strojevima.',
-    imgHint:'klikni za sliku programa',
+    imgHint:'klikni za sliku i alat',
     imgLoading:'ucitavam sliku...',
     imgFail:'slika nije dostupna',
     toolHint:'alat za ovaj program',toolTitle:'Alati',toolUpper:'Gornji alat (OW)',toolLower:'Donji alat (UW)',toolList:'Alati s duzinom',toolCsv:'Werkzeuge iz CSV-a',toolNone:'nema podataka o alatu',toolPos:'pozicija',
@@ -174,7 +177,7 @@ var I18N={
     setupHint:'Die Daten liegen in einem <b>privaten</b> Repo, deshalb liest diese Seite sie über die GitHub-API - dafür wird ein Token benötigt. Auf GitHub: <code>Settings &rarr; Developer settings &rarr; Fine-grained tokens</code>, Zugriff nur auf dieses Repo, Recht <code>Contents: Read-only</code>. Der Token bleibt nur auf diesem Handy gespeichert.',
     btnReload:'Aktualisieren',
     noMachines:'Keine Maschinendaten vorhanden.',
-    imgHint:'antippen für Programmbild',
+    imgHint:'antippen für Bild und Werkzeug',
     imgLoading:'Bild wird geladen...',
     imgFail:'Bild nicht verfügbar',
     toolHint:'Werkzeug für dieses Programm',toolTitle:'Werkzeuge',toolUpper:'Oberwerkzeug (OW)',toolLower:'Unterwerkzeug (UW)',toolList:'Werkzeuge mit Länge',toolCsv:'Werkzeuge aus der CSV',toolNone:'keine Werkzeugdaten',toolPos:'Position',
@@ -288,8 +291,8 @@ function render(d){
     if(m.lastPieceText)kv.push('<span>'+dict.kvLastPiece+' <b>'+esc(m.lastPieceText)+'</b></span>');
     if(m.counter!=null)kv.push('<span>'+dict.kvCounter+' <b>'+num(m.counter)+'</b></span>');
     var nx=(m.next||[]).map(function(n){return esc(n.program)+(n.ip?' / '+esc(n.ip):'')+(n.qty?' ('+n.qty+' '+dict.qtySuffix+')':'')}).join(' &rarr; ');
-    var cardCls=m.img?'card hasimg':'card';
-    var cardAttr=m.img?' data-imgpath="'+esc(m.img)+'" title="'+esc(dict.imgHint)+'"':'';
+    var cardCls=(m.img||m.tools)?'card hasimg':'card';
+    var cardAttr=(m.img||m.tools)?' data-mach="'+esc(m.machine)+'" title="'+esc(dict.imgHint)+'"':'';
     return '<div class="'+cardCls+'"'+cardAttr+'>'
       +'<div class="top"><span class="mach">'+esc(m.machine)+'</span>'
       +'<span><span class="prog">'+esc(m.program||'-')+'</span> <span class="ip">'+esc(m.ip||'')+'</span></span>'
@@ -499,8 +502,10 @@ function toolRowsHtml(arr,code){
 }
 function openTools(machine){
   var m=((lastData&&lastData.machines)||[]).filter(function(x){return x&&x.machine===machine})[0];
-  if(!m||!m.tools)return;
-  var d=t(),tl=m.tools,h='';
+  if(!m||!(m.tools||m.img))return;
+  var d=t(),tl=m.tools||{},h='';
+  var imgPath=m.img||'',seq=++tlSeq;
+  if(imgPath)h+='<div class="tlimg" id="tlImgBox"><span>'+esc(d.imgLoading)+'</span></div>';
   if((tl.ow&&tl.ow.length)||(tl.uw&&tl.uw.length)){
     h+='<div class="tlsec">'+esc(d.toolUpper)+'</div>'+toolLaneHtml(tl.ow,'ow','OW')+toolRowsHtml(tl.ow,'OW');
     h+='<div class="tlsec">'+esc(d.toolLower)+'</div>'+toolLaneHtml(tl.uw,'uw','UW')+toolRowsHtml(tl.uw,'UW');
@@ -512,19 +517,30 @@ function openTools(machine){
   }
   if(tl.w)h+='<div class="tlsec">'+esc(d.toolCsv)+'</div><div class="trow"><span class="n">'+esc(tl.w)+'</span></div>';
   document.getElementById('tlTitle').textContent=d.toolTitle+' · '+m.machine+' · '+(m.program||'-');
+  if(!m.tools)h+='<div class="tnone">'+esc(d.toolNone)+'</div>';
+  document.getElementById('tlTitle').textContent=(m.tools?d.toolTitle+' · ':'')+m.machine+' · '+(m.program||'-');
   document.getElementById('tlBody').innerHTML=h||'<div class="tnone">'+esc(d.toolNone)+'</div>';
-  tlEl.hidden=false;
+  tlEl.hidden=false;tlEl.scrollTop=0;
+  if(imgPath){
+    var box=document.getElementById('tlImgBox');
+    box.addEventListener('click',function(){openImage(imgPath)});
+    fetchImage(imgPath).then(function(u){
+      if(seq!==tlSeq||tlEl.hidden)return;
+      box.innerHTML=u?'<img alt="" src="'+u+'">':'<span>'+esc(d.imgFail)+'</span>';
+    });
+  }
 }
-function closeTools(){tlEl.hidden=true}
+var tlSeq=0;
+function closeTools(){tlSeq++;tlEl.hidden=true}
 document.getElementById('tlClose').addEventListener('click',closeTools);
 tlEl.addEventListener('click',function(e){if(e.target===tlEl)closeTools()});
-document.addEventListener('keydown',function(e){if(!tlEl.hidden&&(e.key==='Escape'||e.key==='Esc'))closeTools()});
+document.addEventListener('keydown',function(e){if(!tlEl.hidden&&lb.hidden&&(e.key==='Escape'||e.key==='Esc'))closeTools()});
 function bindCardImages(){
   Array.prototype.forEach.call(cards.querySelectorAll('.tooltag[data-tools]'),function(el){
     el.addEventListener('click',function(e){e.stopPropagation();openTools(el.getAttribute('data-tools')||'')});
   });
-  Array.prototype.forEach.call(cards.querySelectorAll('.card[data-imgpath]'),function(el){
-    el.addEventListener('click',function(){openImage(el.getAttribute('data-imgpath')||'')});
+  Array.prototype.forEach.call(cards.querySelectorAll('.card[data-mach]'),function(el){
+    el.addEventListener('click',function(){openTools(el.getAttribute('data-mach')||'')});
   });
 }
 lb.addEventListener('click',closeImage);
