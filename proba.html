@@ -583,7 +583,8 @@ function openTools(machine){
   if(imgPath||ph)h+='<div class="tltop">'+(imgPath?'<div class="tlimg" id="tlImgBox"><span>'+esc(d.imgLoading)+'</span></div>':'')+ph+'</div>';
   if((tl.ow&&tl.ow.length)||(tl.uw&&tl.uw.length)){
     var mh=toolMaxH(tl),ik=toolIconScale(tl);
-    h+='<div class="tlsec">'+esc(d.toolUpper)+'</div>'+toolIconsHtml(tl.ow,tl.pf,true,ik)+toolLaneHtml(tl.ow,'ow','OW',mh)+toolRowsHtml(tl.ow,'OW');
+    // OW: detalji gore, pa profil i traka (alat visi s grede); UW: traka, profil, pa detalji dolje.
+    h+='<div class="tlsec">'+esc(d.toolUpper)+'</div>'+toolRowsHtml(tl.ow,'OW')+toolIconsHtml(tl.ow,tl.pf,true,ik)+toolLaneHtml(tl.ow,'ow','OW',mh);
     h+='<div class="tlsec">'+esc(d.toolLower)+'</div>'+toolLaneHtml(tl.uw,'uw','UW',mh)+toolIconsHtml(tl.uw,tl.pf,false,ik)+toolRowsHtml(tl.uw,'UW');
   }
   if(tl.items&&tl.items.length&&!((tl.ow&&tl.ow.length)||(tl.uw&&tl.uw.length))){
