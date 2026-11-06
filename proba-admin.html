@@ -73,6 +73,7 @@ h1{margin:0;font-size:17px;letter-spacing:.02em;flex:1}
 #tl .tlimg img{display:block;width:100%;height:auto;max-height:62vh;object-fit:contain}
 #tl .tlimg span{color:#64748b;font-size:13px;padding:20px}
 #tl .ticons{position:relative;margin:4px 0 -2px}
+#tl .ticons.uw{margin:-2px 0 6px}
 #tl .ticons .ti{position:absolute;bottom:0;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center}
 #tl .ticons.ow .ti{bottom:auto;top:0}
 #tl .ticons .ti svg{display:block;overflow:visible}
@@ -607,7 +608,7 @@ function profBox(d){
   if(!xs.length)return null;
   return {x0:Math.min.apply(null,xs),x1:Math.max.apply(null,xs),y0:Math.min.apply(null,ys),y1:Math.max.apply(null,ys)};
 }
-// Male slike profila iznad trake: susjedni isti alat (isti profil i okret, razmak <80 mm ~ sirina slicice) = jedna slika na sredini skupine.
+// Male slike profila: OW iznad trake (visi s grede), UW ispod trake (stoji na stolu); susjedni isti alat (isti profil i okret, razmak <80 mm ~ sirina slicice) = jedna slika na sredini skupine.
 // Sve slike u istom mjerilu (najvisi profil = 46 px); OW vrhom dolje, okrenut alat zrcaljen + oznaka.
 var TOOL_ICON_PX=46;
 function toolIconScale(tl){var m=0,pf=tl.pf||[];[tl.ow,tl.uw].forEach(function(a){(a||[]).forEach(function(x){var b=x.p!=null&&pf[x.p]?profBox(pf[x.p]):null;if(b)m=Math.max(m,b.y1-b.y0)})});return m>0?TOOL_ICON_PX/m:0}
@@ -661,7 +662,7 @@ function openTools(machine){
   if((tl.ow&&tl.ow.length)||(tl.uw&&tl.uw.length)){
     var mh=toolMaxH(tl),ik=toolIconScale(tl);
     h+='<div class="tlsec">'+esc(d.toolUpper)+'</div>'+toolIconsHtml(tl.ow,tl.pf,true,ik)+toolLaneHtml(tl.ow,'ow','OW',mh)+toolRowsHtml(tl.ow,'OW');
-    h+='<div class="tlsec">'+esc(d.toolLower)+'</div>'+toolIconsHtml(tl.uw,tl.pf,false,ik)+toolLaneHtml(tl.uw,'uw','UW',mh)+toolRowsHtml(tl.uw,'UW');
+    h+='<div class="tlsec">'+esc(d.toolLower)+'</div>'+toolLaneHtml(tl.uw,'uw','UW',mh)+toolIconsHtml(tl.uw,tl.pf,false,ik)+toolRowsHtml(tl.uw,'UW');
   }
   if(tl.items&&tl.items.length&&!((tl.ow&&tl.ow.length)||(tl.uw&&tl.uw.length))){
     h+='<div class="tlsec">'+esc(d.toolList)+'</div>'+tl.items.map(function(x){
