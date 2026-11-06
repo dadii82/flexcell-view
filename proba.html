@@ -39,6 +39,24 @@ h1{margin:0;font-size:17px;letter-spacing:.02em;flex:1}
 .stalenote{margin:-2px 0 6px;font-size:12px;font-weight:700;color:var(--warn)}
 .card.hasimg{cursor:zoom-in}
 .imgtag{font-size:14px;line-height:1;opacity:.75}
+.tooltag{font-size:15px;line-height:1;padding:3px 7px;margin:-3px 0;border-radius:8px;border:1px solid var(--line);background:#0b1220;cursor:pointer}
+#tl{position:fixed;inset:0;z-index:61;overflow:auto;padding:16px 12px 30px;background:#0b1220}
+#tl .tlbox{max-width:760px;margin:0 auto}
+#tl .tlhead{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+#tl .tlhead b{flex:1;font-size:17px}
+#tl .tlhead button{padding:6px 12px}
+#tl .tlsec{margin:14px 0 6px;font-size:12px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.06em}
+#tl .lane{position:relative;height:44px;border-radius:8px;background:#0b1220;border:1px solid var(--line);margin:6px 0}
+#tl .lane .cl{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:#ef4444;opacity:.7}
+#tl .lane .lb{position:absolute;left:6px;top:4px;font-size:10px;font-weight:800;color:var(--dim)}
+#tl .lane .blk{position:absolute;top:14px;bottom:5px;min-width:3px;border-radius:4px;background:#3b82f6;border:1px solid #93c5fd}
+#tl .lane.uw .blk{background:#16a34a;border-color:#86efac}
+#tl .trow{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid rgba(51,65,85,.55);font-size:14px}
+#tl .trow .k{flex:0 0 34px;font-weight:800;color:var(--dim)}
+#tl .trow .n{flex:1;min-width:0}
+#tl .trow .n small{display:block;color:var(--dim);font-size:11px}
+#tl .trow .v{white-space:nowrap;font-weight:700;font-variant-numeric:tabular-nums}
+#tl .tnone{color:var(--dim);font-size:13px;padding:6px 0}
 #lb{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:10px;background:rgba(2,6,23,.94);cursor:zoom-out}
 #lb[hidden]{display:none}
 #lb img{width:auto;height:auto;max-width:min(300px,86vw);max-height:min(300px,70vh);border-radius:10px;border:1px solid var(--line);background:#0b1220}
@@ -89,6 +107,7 @@ body.offline #cards,body.offline #sum{filter:blur(3px);opacity:.55}
 <footer><button id="reload">Osvjezi</button><span id="src" style="font-size:11px;color:var(--dim)"></span></footer>
 <div id="srcBadge"><i></i><span id="srcBadgeTxt"></span></div>
 <div id="offline" hidden><div class="box"><b>OFFLINE</b><span id="offlineSub"></span></div></div>
+<div id="tl" hidden><div class="tlbox"><div class="tlhead"><b id="tlTitle"></b><button id="tlClose">&#10005;</button></div><div id="tlBody"></div></div></div>
 <div id="lb" hidden><img id="lbimg" alt=""><div id="lbnote"></div></div>
 <script>
 (function(){
@@ -113,6 +132,7 @@ var I18N={
     imgHint:'klikni za sliku programa',
     imgLoading:'ucitavam sliku...',
     imgFail:'slika nije dostupna',
+    toolHint:'alat za ovaj program',toolTitle:'Alati',toolUpper:'Gornji alat (OW)',toolLower:'Donji alat (UW)',toolList:'Alati s duzinom',toolCsv:'Werkzeuge iz CSV-a',toolNone:'nema podataka o alatu',toolPos:'pozicija',
     kvPieces:'komada',
     kvSecPerPart:'s/kom',
     kvEta:'zavrsetak',
@@ -157,6 +177,7 @@ var I18N={
     imgHint:'antippen für Programmbild',
     imgLoading:'Bild wird geladen...',
     imgFail:'Bild nicht verfügbar',
+    toolHint:'Werkzeug für dieses Programm',toolTitle:'Werkzeuge',toolUpper:'Oberwerkzeug (OW)',toolLower:'Unterwerkzeug (UW)',toolList:'Werkzeuge mit Länge',toolCsv:'Werkzeuge aus der CSV',toolNone:'keine Werkzeugdaten',toolPos:'Position',
     kvPieces:'Stück',
     kvSecPerPart:'s/Stk',
     kvEta:'Fertig',
@@ -273,6 +294,7 @@ function render(d){
       +'<div class="top"><span class="mach">'+esc(m.machine)+'</span>'
       +'<span><span class="prog">'+esc(m.program||'-')+'</span> <span class="ip">'+esc(m.ip||'')+'</span></span>'
       +(m.img?'<span class="imgtag">&#128247;</span>':'')
+      +(m.tools?'<span class="tooltag" data-tools="'+esc(m.machine)+'" title="'+esc(dict.toolHint)+'">&#128295;</span>':'')
       +'<span class="badge '+statusClass(cardStatus(m))+'">'+esc(statusLabel(cardStatus(m)))+'</span></div>'
       +(m.stale?'<div class="stalenote">'+esc(staleText(m))+'</div>':'')
       +(m.name?'<div class="ip" style="margin:-4px 0 6px">'+esc(m.name)+'</div>':'')
@@ -458,7 +480,49 @@ function openImage(path){
     lbNote.textContent='';lbImg.src=u;
   });
 }
+// --- Alati (kljuc 🔧): raspored OW/UW na liniji 0-2500 mm (crvena crta = sredina), pa popis.
+var tlEl=document.getElementById('tl');
+function toolMm(v){return Math.round(Number(v)||0).toLocaleString(lang==='de'?'de-DE':'hr-HR')+' mm'}
+function toolLaneHtml(arr,cls,code){
+  return '<div class="lane '+cls+'"><span class="lb">'+code+'</span><i class="cl" style="left:50%"></i>'+(arr||[]).map(function(x){
+    var len=Number(x.len)||0,c=Number(x.c)||1250,l=Math.max(0,Math.min(100,(c-len/2)/2500*100)),w=Math.max(.4,Math.min(100-l,len/2500*100));
+    return '<i class="blk" style="left:'+l+'%;width:'+w+'%" title="'+esc(x.n)+'"></i>';
+  }).join('')+'</div>';
+}
+function toolRowsHtml(arr,code){
+  var d=t();
+  return (arr||[]).map(function(x){
+    var len=Number(x.len)||0,c=Number(x.c)||1250;
+    return '<div class="trow"><span class="k">'+code+'</span><span class="n">'+esc(x.n||'-')+(x.o?'<small>'+esc(x.o)+'</small>':'')
+      +'<small>'+esc(d.toolPos)+' '+toolMm(c-len/2)+' - '+toolMm(c+len/2)+'</small></span><span class="v">'+toolMm(len)+'</span></div>';
+  }).join('');
+}
+function openTools(machine){
+  var m=((lastData&&lastData.machines)||[]).filter(function(x){return x&&x.machine===machine})[0];
+  if(!m||!m.tools)return;
+  var d=t(),tl=m.tools,h='';
+  if((tl.ow&&tl.ow.length)||(tl.uw&&tl.uw.length)){
+    h+='<div class="tlsec">'+esc(d.toolUpper)+'</div>'+toolLaneHtml(tl.ow,'ow','OW')+toolRowsHtml(tl.ow,'OW');
+    h+='<div class="tlsec">'+esc(d.toolLower)+'</div>'+toolLaneHtml(tl.uw,'uw','UW')+toolRowsHtml(tl.uw,'UW');
+  }
+  if(tl.items&&tl.items.length&&!((tl.ow&&tl.ow.length)||(tl.uw&&tl.uw.length))){
+    h+='<div class="tlsec">'+esc(d.toolList)+'</div>'+tl.items.map(function(x){
+      return '<div class="trow"><span class="n">'+esc(x.t)+'</span><span class="v">'+esc((x.l||[]).join(' | ')||'-')+'</span></div>';
+    }).join('');
+  }
+  if(tl.w)h+='<div class="tlsec">'+esc(d.toolCsv)+'</div><div class="trow"><span class="n">'+esc(tl.w)+'</span></div>';
+  document.getElementById('tlTitle').textContent=d.toolTitle+' · '+m.machine+' · '+(m.program||'-');
+  document.getElementById('tlBody').innerHTML=h||'<div class="tnone">'+esc(d.toolNone)+'</div>';
+  tlEl.hidden=false;
+}
+function closeTools(){tlEl.hidden=true}
+document.getElementById('tlClose').addEventListener('click',closeTools);
+tlEl.addEventListener('click',function(e){if(e.target===tlEl)closeTools()});
+document.addEventListener('keydown',function(e){if(!tlEl.hidden&&(e.key==='Escape'||e.key==='Esc'))closeTools()});
 function bindCardImages(){
+  Array.prototype.forEach.call(cards.querySelectorAll('.tooltag[data-tools]'),function(el){
+    el.addEventListener('click',function(e){e.stopPropagation();openTools(el.getAttribute('data-tools')||'')});
+  });
   Array.prototype.forEach.call(cards.querySelectorAll('.card[data-imgpath]'),function(el){
     el.addEventListener('click',function(){openImage(el.getAttribute('data-imgpath')||'')});
   });
