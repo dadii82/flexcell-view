@@ -46,9 +46,10 @@ h1{margin:0;font-size:17px;letter-spacing:.02em;flex:1}
 #tl .tlhead b{flex:1;font-size:17px}
 #tl .tlhead button{padding:6px 12px}
 #tl .tlsec{margin:14px 0 6px;font-size:12px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.06em}
-#tl .lane{position:relative;height:44px;border-radius:8px;background:#0b1220;border:1px solid var(--line);margin:6px 0}
+#tl .lane{position:relative;border-radius:8px;background:#0b1220;border:1px solid var(--line);margin:6px 0;overflow:hidden}
 #tl .lane .cl{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:#ef4444;opacity:.7}
-#tl .lane .lb{position:absolute;left:6px;top:4px;font-size:10px;font-weight:800;color:var(--dim)}
+#tl .lane.uw .lb{top:auto;bottom:6px}
+#tl .lane .lb{position:absolute;z-index:1;left:6px;top:6px;font-size:10px;font-weight:800;color:var(--dim)}
 #tl .lane .blk{position:absolute;top:14px;bottom:5px;min-width:3px;border-radius:4px;background:#3b82f6;border:1px solid #93c5fd}
 #tl .lane.uw .blk{background:#16a34a;border-color:#86efac}
 #tl .trow{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid rgba(51,65,85,.55);font-size:14px}
@@ -488,12 +489,21 @@ function openImage(path){
 var tlEl=document.getElementById('tl');
 function toolMmH(v){return (Math.round((Number(v)||0)*10)/10).toLocaleString(lang==='de'?'de-DE':'hr-HR',{maximumFractionDigits:1})+' mm'}
 function toolMm(v){return Math.round(Number(v)||0).toLocaleString(lang==='de'?'de-DE':'hr-HR')+' mm'}
-function toolLaneHtml(arr,cls,code){
-  return '<div class="lane '+cls+'"><span class="lb">'+code+'</span><i class="cl" style="left:50%"></i>'+(arr||[]).map(function(x){
-    var len=Number(x.len)||0,c=Number(x.c)||1250,l=Math.max(0,Math.min(100,(c-len/2)/2500*100)),w=Math.max(.4,Math.min(100-l,len/2500*100));
-    return '<i class="blk" style="left:'+l+'%;width:'+w+'%" title="'+esc(x.n)+(Number(x.h)>0?' · H '+toolMmH(x.h):'')+'"></i>';
-  }).join('')+'</div>';
+// Bocni pogled u mjerilu: 2500 mm siroko, visina alata u istom mjerilu (OW visi s grede, UW stoji na stolu).
+// Alat bez poznate visine crta se 100 mm, isprekidano.
+function toolLaneHtml(arr,cls,code,scaleH){
+  var up=cls==='ow',pad=30,H=Math.max(scaleH||0,60)+pad*2,beam=up?pad:H-pad;
+  var col=up?['#3b82f6','#93c5fd']:['#16a34a','#86efac'];
+  var g='<rect x="0" y="'+(up?0:H-pad)+'" width="2500" height="'+pad+'" fill="#1e293b"/>';
+  g+=(arr||[]).map(function(x){
+    var len=Number(x.len)||0,c=Number(x.c)||1250,h=Number(x.h)>0?Number(x.h):100,known=Number(x.h)>0;
+    var l=Math.max(0,c-len/2),w=Math.max(6,Math.min(2500-l,len)),y=up?beam:beam-h;
+    return '<rect x="'+l+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="6" fill="'+col[0]+'" fill-opacity="'+(known?1:.45)+'" stroke="'+col[1]+'" stroke-width="1.5" vector-effect="non-scaling-stroke"'+(known?'':' stroke-dasharray="4 3"')+'><title>'+esc(x.n)+(known?' · H '+toolMmH(x.h):'')+'</title></rect>';
+  }).join('');
+  g+='<rect x="1249" y="0" width="2" height="'+H+'" fill="#ef4444" opacity=".75"/>';
+  return '<div class="lane '+cls+'"><span class="lb">'+code+'</span><svg viewBox="0 0 2500 '+H+'" preserveAspectRatio="none" style="display:block;width:100%;height:auto;aspect-ratio:2500/'+H+'">'+g+'</svg></div>';
 }
+function toolMaxH(tl){var m=0;[tl.ow,tl.uw].forEach(function(a){(a||[]).forEach(function(x){var h=Number(x.h)>0?Number(x.h):100;if(h>m)m=h})});return m}
 function toolRowsHtml(arr,code){
   var d=t();
   return (arr||[]).map(function(x){
@@ -509,8 +519,9 @@ function openTools(machine){
   var imgPath=m.img||'',seq=++tlSeq;
   if(imgPath)h+='<div class="tlimg" id="tlImgBox"><span>'+esc(d.imgLoading)+'</span></div>';
   if((tl.ow&&tl.ow.length)||(tl.uw&&tl.uw.length)){
-    h+='<div class="tlsec">'+esc(d.toolUpper)+'</div>'+toolLaneHtml(tl.ow,'ow','OW')+toolRowsHtml(tl.ow,'OW');
-    h+='<div class="tlsec">'+esc(d.toolLower)+'</div>'+toolLaneHtml(tl.uw,'uw','UW')+toolRowsHtml(tl.uw,'UW');
+    var mh=toolMaxH(tl);
+    h+='<div class="tlsec">'+esc(d.toolUpper)+'</div>'+toolLaneHtml(tl.ow,'ow','OW',mh)+toolRowsHtml(tl.ow,'OW');
+    h+='<div class="tlsec">'+esc(d.toolLower)+'</div>'+toolLaneHtml(tl.uw,'uw','UW',mh)+toolRowsHtml(tl.uw,'UW');
   }
   if(tl.items&&tl.items.length&&!((tl.ow&&tl.ow.length)||(tl.uw&&tl.uw.length))){
     h+='<div class="tlsec">'+esc(d.toolList)+'</div>'+tl.items.map(function(x){
