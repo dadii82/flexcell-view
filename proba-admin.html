@@ -1,0 +1,1112 @@
+<!doctype html>
+<html lang="hr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<!-- Admin stranica: kao user stranica (mobile-status.html), ali s trazenjem analize i pregledima. Aplikacija je NE objavljuje
+     automatski (auto-objava dira samo cfg.page = index.html), pa se gura rucno preko gh/GitHuba. -->
+<meta name="flexcell-page-version" content="2.5.68">
+<title>Flexcell - admin</title>
+<style>
+:root{--bg:#0f172a;--card:#1e293b;--line:#334155;--txt:#e2e8f0;--dim:#94a3b8;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--idle:#64748b}
+*{box-sizing:border-box}
+body{margin:0;padding:12px 12px 28px;background:var(--bg);color:var(--txt);font:15px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+header{display:flex;align-items:center;gap:8px;margin:2px 2px 12px}
+h1{margin:0;font-size:17px;letter-spacing:.02em;flex:1}
+#age{font-size:12px;color:var(--dim);white-space:nowrap}
+#age.stale{color:var(--bad);font-weight:700}
+.gear,.lang{appearance:none;border:1px solid var(--line);background:#0b1220;color:var(--txt);font-size:15px;line-height:1;padding:6px 9px;border-radius:9px}
+.lang{font-size:12px;font-weight:800;letter-spacing:.03em}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 13px;margin-bottom:10px}
+.top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.mach{font-size:20px;font-weight:800;letter-spacing:.03em}
+.badge{margin-left:auto;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;padding:3px 9px;border-radius:999px;border:1px solid}
+.b-rad{color:#bbf7d0;border-color:#166534;background:#14532d}
+.b-pod{color:#fde68a;border-color:#92400e;background:#78350f}
+.b-pau{color:#fed7aa;border-color:#9a3412;background:#7c2d12}
+.b-stoj{color:#e2e8f0;border-color:#475569;background:#334155}
+.b-got{color:#a5f3fc;border-color:#0e7490;background:#164e63}
+.b-prazno{color:#cbd5e1;border-color:#475569;background:#1e293b}
+.prog{font-size:15px;font-weight:700}
+.ip{color:var(--dim);font-size:13px}
+.bar{position:relative;height:22px;border-radius:999px;background:#0b1220;border:1px solid var(--line);overflow:hidden;margin:9px 0 7px}
+.bar i{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:linear-gradient(90deg,#0ea5e9,#22c55e);transition:width .4s ease}
+.bar span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.kv{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:13px;color:var(--dim)}
+.kv b{color:var(--txt);font-weight:700}
+.next{margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);font-size:12px;color:var(--dim)}
+.next b{color:#cbd5e1}
+.stalenote{margin:-2px 0 6px;font-size:12px;font-weight:700;color:var(--warn)}
+.card.hasimg{cursor:zoom-in}
+.imgtag{font-size:14px;line-height:1;opacity:.75}
+#lb{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:10px;background:rgba(2,6,23,.94);cursor:zoom-out}
+#lb[hidden]{display:none}
+#lb img{width:auto;height:auto;max-width:min(300px,86vw);max-height:min(300px,70vh);border-radius:10px;border:1px solid var(--line);background:#0b1220}
+#lbnote{position:absolute;left:0;right:0;bottom:18px;text-align:center;font-size:13px;color:var(--dim)}
+.sum{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--dim);padding:2px 4px}
+.sum b{color:var(--txt)}
+button{appearance:none;border:1px solid var(--line);background:#0b1220;color:var(--txt);font:600 13px inherit;padding:9px 14px;border-radius:10px}
+button.pri{background:#1d4ed8;border-color:#1d4ed8;color:#fff}
+button[disabled]{opacity:.5}
+select{appearance:none;border:1px solid var(--line);background:#0b1220;color:var(--txt);font:600 13px inherit;padding:9px 10px;border-radius:10px}
+.anahead{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+.anastate{margin-left:auto;font-size:12px;color:var(--dim);text-align:right}
+.anastate.work{color:var(--warn);font-weight:700}
+.anastate.ok{color:var(--ok);font-weight:700}
+.anastate.bad{color:var(--bad);font-weight:700}
+.anarow{display:flex;gap:8px;align-items:center}
+.anahint{font-size:12px;color:var(--dim);margin-top:9px;line-height:1.45}
+.analist{margin-top:10px;border-top:1px dashed var(--line);padding-top:6px}
+.anaitem{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13px;border-bottom:1px solid rgba(51,65,85,.55)}
+.anaitem:last-child{border-bottom:0}
+.anaitem .nm{flex:1;min-width:0}
+.anaitem .nm b{display:block;font-weight:700;color:var(--txt)}
+.anaitem .nm span{color:var(--dim);font-size:11px}
+.anaitem button{padding:6px 11px;font-size:12px;white-space:nowrap}
+.analistempty{font-size:12px;color:var(--dim);padding:4px 0}
+.uselist{margin-top:4px}
+.useitem{padding:10px 0;font-size:13px;border-bottom:1px solid rgba(51,65,85,.55)}
+.useitem:last-child{border-bottom:0}
+.useitem .uhead{display:flex;align-items:center;gap:8px}
+.useitem input{flex:1;min-width:0;padding:7px 9px;border-radius:8px;border:1px solid var(--line);background:#0b1220;color:var(--txt);font:600 14px inherit}
+.useitem .ubadge{flex:0 0 auto;padding:4px 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap;background:rgba(51,65,85,.6);color:var(--txt)}
+.useitem .ubadge.on{background:rgba(22,163,74,.22);color:#4ade80}
+.useitem .umeta{margin-top:5px;color:var(--dim);font-size:11px}
+.useitem .uviews{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.useitem .uviews span{padding:3px 7px;border-radius:6px;background:#0b1220;border:1px solid var(--line);color:var(--txt);font-size:11px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.useitem .uviews span:first-child{border-color:#3b82f6}
+.useempty{font-size:12px;color:var(--dim);padding:4px 0}
+.usrform{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.usrform input{flex:1 1 140px;min-width:0;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:#0b1220;color:var(--txt);font:14px inherit}
+.usrform select,.usritem select{padding:7px 8px;border-radius:8px;border:1px solid var(--line);background:#0b1220;color:var(--txt);font:13px inherit}
+.usrnew{margin-top:10px;padding:10px 12px;border-radius:10px;border:1px solid #16a34a;background:rgba(22,163,74,.12);font-size:13px;line-height:1.6}
+.usrnew code{font-size:16px;font-weight:800;color:#4ade80;letter-spacing:.04em;user-select:all}
+.usrlist{margin-top:8px}
+.usritem{padding:9px 0;font-size:13px;border-bottom:1px solid rgba(51,65,85,.55)}
+.usritem:last-child{border-bottom:0}
+.usritem .uhead{display:flex;align-items:center;gap:8px}
+.usritem .uem{flex:1;min-width:0;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.usritem .umeta{margin-top:4px;color:var(--dim);font-size:11px}
+.usritem .uact{display:flex;gap:6px;margin-top:6px}
+.usritem .uact button{padding:5px 10px;font-size:12px}
+.usritem.norole .uem{color:#fbbf24}
+footer{display:flex;align-items:center;gap:10px;margin-top:14px}
+/* Oznaka u kutu: odakle stranica cita podatke + je li zadnje citanje uspjelo */
+#srcBadge{position:fixed;left:8px;bottom:6px;z-index:30;display:flex;align-items:center;gap:5px;font-size:11px;line-height:1;padding:4px 8px;border-radius:10px;background:rgba(30,41,59,.92);border:1px solid var(--line);color:var(--dim);pointer-events:none}
+#srcBadge i{width:7px;height:7px;border-radius:50%;background:var(--idle)}
+#srcBadge.ok i{background:var(--ok)}#srcBadge.bad i{background:var(--bad)}
+#err{color:var(--bad);font-size:13px;margin:6px 4px}
+#setup label{display:block;font-size:12px;color:var(--dim);margin:9px 0 3px}
+#setup input{width:100%;padding:10px;border-radius:9px;border:1px solid var(--line);background:#0b1220;color:var(--txt);font:15px inherit}
+#setup .row{display:flex;gap:8px;margin-top:13px}
+#setup .hint{font-size:12px;color:var(--dim);margin-top:11px;line-height:1.45}
+#setup .hint code{color:#cbd5e1}
+/* Aplikacija ne salje (stanje.json stariji od 15 min): OFFLINE na sredini, kartice zamucene, zaglavlje s vremenom ostaje ostro. */
+#cards,#sum{transition:filter .3s ease}
+body.offline #cards,body.offline #sum{filter:blur(3px);opacity:.55}
+#offline{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;pointer-events:none}
+#offline .box{text-align:center;padding:16px 26px;border-radius:16px;border:1px solid #7f1d1d;background:rgba(15,23,42,.88);box-shadow:0 10px 40px rgba(0,0,0,.5)}
+#offline b{display:block;font-size:34px;font-weight:900;letter-spacing:.12em;color:var(--bad)}
+#offline span{display:block;margin-top:4px;font-size:13px;color:var(--dim)}
+/* Android aplikacija (window.AndroidApp): admin dijelovi idu u postavke, zvonce za obavijesti u zaglavlju. */
+#bell.on{background:#14532d;border-color:#166534}
+body.app h1{flex:0 0 auto}
+body.app #age{flex:1;min-width:0;white-space:normal;text-align:right;line-height:1.2}
+#appBox .chk{display:flex;align-items:center;gap:9px;font-size:13px;margin:8px 0}
+#appBox .chk input{width:18px;height:18px;margin:0}
+#appBox .warnline{font-size:12px;color:var(--warn);margin:6px 0}
+#appBox .row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+#appBox .dimline{font-size:12px;color:var(--dim);margin-top:8px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header><h1 id="h1Title">Flexcell - admin</h1><div id="age">ucitavam...</div><button id="bell" class="gear" hidden>&#128277;</button><button id="langBtn" class="lang" title="Jezik / Sprache">DE</button><button id="gear" class="gear" title="Postavke">&#9881;</button></header>
+<div id="setup" class="card" hidden>
+  <div id="setupHeading" style="font-weight:700;margin-bottom:2px">Postavke</div>
+  <label id="lblRepo" hidden>Privatni repo s podacima (korisnik/repo)</label><input id="cfgRepo" placeholder="korisnik/flexcell-stanje" autocapitalize="off" autocorrect="off" spellcheck="false" hidden>
+  <label id="lblPath" hidden>Datoteka</label><input id="cfgPath" placeholder="stanje.json" autocapitalize="off" autocorrect="off" spellcheck="false" hidden>
+  <label id="lblBranch" hidden>Branch</label><input id="cfgBranch" placeholder="main" autocapitalize="off" autocorrect="off" spellcheck="false" hidden>
+  <label id="lblEmail">E-mail</label><input id="cfgEmail" type="email" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="username">
+  <label id="lblPass">Lozinka</label><input id="cfgPass" type="password" autocomplete="current-password">
+  <div class="row"><button id="sbLogin" class="pri">Prijava</button><button id="sbLogout" hidden>Odjava</button></div>
+  <div id="sbInfo" class="hint"></div>
+  <label id="lblToken" style="margin-top:14px">Token s pravom pisanja</label><input id="cfgToken" type="password" placeholder="github_pat_..." autocapitalize="off" autocorrect="off" spellcheck="false">
+  <div class="row"><button id="cfgSave">Spremi</button></div>
+  <div id="setupHint" class="hint" hidden>Ova stranica salje zahtjev racunalu, pa token treba pravo <code>Contents: Read and write</code> na <b>privatni</b> repo s podacima. Token ostaje spremljen samo na ovom mobitelu.</div>
+</div>
+<div id="appBox" hidden>
+<div id="notif" class="card">
+  <div class="anahead"><span id="notifTitle" style="font-weight:700">Obavijesti</span><span id="notifState" class="anastate"></span></div>
+  <label class="chk"><input id="notifStop" type="checkbox"><span id="notifStopLbl"></span></label>
+  <label class="chk"><input id="notifOff" type="checkbox"><span id="notifOffLbl"></span></label>
+  <div id="notifPerm" class="warnline" hidden></div>
+  <div id="notifBat" class="warnline" hidden></div>
+  <div class="row"><button id="notifPermBtn" hidden></button><button id="notifBatBtn" hidden></button><button id="notifTest"></button></div>
+  <div id="appVer" class="dimline"></div>
+  <div class="row"><button id="appUpd"></button></div>
+</div>
+</div>
+<div id="cards"></div>
+<div id="ana" class="card">
+  <div class="anahead"><span id="anaTitle" style="font-weight:700">Analiza</span><span id="anaState" class="anastate"></span></div>
+  <div class="anarow">
+    <select id="anaHours">
+      <option value="6">6 h</option>
+      <option value="12" selected>12 h</option>
+      <option value="24">24 h</option>
+      <option value="48">48 h</option>
+    </select>
+    <button id="anaReq" class="pri">Zatrazi analizu</button>
+  </div>
+  <div id="anaHint" class="anahint"></div>
+  <div id="anaList" class="analist"></div>
+</div>
+<div id="use" class="card">
+  <div class="anahead"><span id="useTitle" style="font-weight:700">Koristenje</span><span id="useState" class="anastate"></span></div>
+  <div id="useList" class="uselist"></div>
+</div>
+<div id="usr" class="card" hidden>
+  <div class="anahead"><span id="usrTitle" style="font-weight:700">Korisnici</span><span id="usrState" class="anastate"></span></div>
+  <div class="usrform"><input id="usrName" placeholder="ime ili e-mail" autocapitalize="off" autocorrect="off" spellcheck="false"><select id="usrRole"><option value="korisnik">korisnik</option><option value="admin">admin</option></select><button id="usrAdd" class="pri">Dodaj</button></div>
+  <div id="usrNew" class="usrnew" hidden></div>
+  <div id="usrList" class="usrlist"></div>
+</div>
+<div id="sum" class="sum"></div>
+<div id="err"></div>
+<footer><button id="reload">Osvjezi</button><span id="src" style="font-size:11px;color:var(--dim)"></span></footer>
+<div id="srcBadge"><i></i><span id="srcBadgeTxt"></span></div>
+<div id="offline" hidden><div class="box"><b>OFFLINE</b><span id="offlineSub"></span></div></div>
+<div id="lb" hidden><img id="lbimg" alt=""><div id="lbnote"></div></div>
+<script>
+(function(){
+var I18N={
+  hr:{
+    pageTitle:'Flexcell - admin',
+    loading:'ucitavam...',
+    gearTitle:'Postavke',
+    setupHeading:'Postavke',
+    lblRepo:'Privatni repo s podacima (korisnik/repo)',
+    lblPath:'Datoteka',
+    lblBranch:'Branch',
+    lblToken:'GitHub token (staro, rezerva)',
+    lblEmail:'E-mail',lblPass:'Lozinka',btnLogin:'Prijava',btnLogout:'Odjava',
+    sbLoggedIn:function(e,u){return 'Prijavljen: '+e+(u?' ('+u+')':'')+' - Supabase'},sbLoggedOut:'Prijavi se e-mailom i lozinkom (Supabase).',
+    sbBadLogin:'Pogresan e-mail ili lozinka',sbNoRole:'prijava uspjela, ali racun jos nema ulogu',sbExpired:'prijava je istekla - prijavi se ponovno',
+    sbNoData:function(u){return 'racun ima pristup ('+u+'), ali u Supabaseu jos nema stanja - racunalo u pogonu ne salje u Supabase (Opcije: kvacica Supabase)'},
+    usrTitle:'Korisnici',usrName:'ime ili e-mail',usrAdd:'Dodaj',usrPwd:'Nova lozinka',usrDel:'Obrisi',usrNoRole:'BEZ ULOGE',usrMe:'ti',
+    usrCreated:function(e,p){return 'Racun <b>'+e+'</b> - lozinka: <code>'+p+'</code><br>Prepisi je sad, vise se ne prikazuje. Na stranici: &#9881; &rarr; E-mail + Lozinka &rarr; Prijava.'},
+    usrPwdNew:function(e,p){return 'Nova lozinka za <b>'+e+'</b>: <code>'+p+'</code><br>Prepisi je sad, vise se ne prikazuje.'},
+    usrDelAsk:function(e){return 'Obrisati racun '+e+'? Ta osoba se vise nece moci prijaviti.'},
+    usrPwdAsk:function(e){return 'Napraviti novu lozinku za '+e+'? Stara prestaje vrijediti.'},
+    usrLastSeen:'zadnje gledanje',usrSignIn:'prijava',usrNever:'jos nije gledao',
+    usrFnMissing:'funkcija korisnici nije postavljena na Supabaseu (supabase/funkcija-korisnici.ts)',
+    usrFail:function(e){return 'nije uspjelo: '+e},usrWorking:'...',usrSaved:'spremljeno',
+    btnSave:'Spremi',
+    btnClose:'Zatvori',
+    setupHint:'Ova stranica salje zahtjev racunalu, pa token treba pravo <code>Contents: Read and write</code> na <b>privatni</b> repo s podacima. Token ostaje spremljen samo na ovom mobitelu.',
+    btnReload:'Osvjezi',
+    noMachines:'Nema podataka o strojevima.',
+    imgHint:'klikni za sliku programa',
+    imgLoading:'ucitavam sliku...',
+    imgFail:'slika nije dostupna',
+    kvPieces:'komada',
+    kvSecPerPart:'s/kom',
+    kvEta:'zavrsetak',
+    kvLastPiece:'zadnji komad',
+    kvCounter:'brojac stroja',
+    next:'slijedi',
+    planned:'planirano',
+    unplanned:'neplanirano',
+    csv:'CSV',
+    version:'verzija',
+    now:'sada',
+    minSuffix:'min',
+    qtySuffix:'kom',
+    offlineSub:function(age){return 'zadnji podaci prije '+age},
+    staleNote:function(age){return 'bez svjezih podataka'+(age?' '+age:'')+' - aplikacija ne cita log stroja'},
+    status:{rad:'rad',podesavanje:'podesavanje',pauza:'pauza',stoj:'stoj',gotov:'gotov',prazno:'prazno'},
+    langBtn:'DE',
+    errTokenRejected:function(s){return 'token nije prihvacen (HTTP '+s+') - provjeri postavke'},
+    errNoFile:'nema datoteke ili token nema pristup repou (404)',
+    srcLabel:'izvor',srcLocal:'lokalna datoteka',
+    errHttp:function(s){return 'HTTP '+s},
+    errBadJson:'neispravan JSON',
+    errFetchPrefix:'Ne mogu dohvatiti podatke: ',
+    anaTitle:'Analiza',
+    anaBtn:'Zatrazi analizu',
+    anaHint:'Racunalo preuzme zahtjev u svom ciklusu (obicno za 1-5 min) i spremi analizu u repo. PC mora biti upaljen.',
+    anaNoToken:'upisi token u postavke',
+    anaNoWrite:'token nema pravo pisanja',
+    anaSending:'saljem zahtjev...',
+    anaWaiting:function(s){return 'cekam racunalo... '+s},
+    anaDone:'spremno',
+    anaFailed:function(e){return 'nije uspjelo: '+e},
+    anaTimeout:'racunalo nije odgovorilo - je li PC upaljen?',
+    anaListEmpty:'Jos nema spremljenih analiza.',
+    anaDl:'Preuzmi',
+    anaDlWorking:'...',
+    anaDlFailed:function(e){return 'preuzimanje nije uspjelo: '+e},
+    anaHours:function(h){return h+' h'},
+    anaNightly:'nocna',
+    useTitle:'Koristenje',
+    useEmpty:'Jos nema zapisa koristenja.',
+    useName:'ime',
+    useViews:'gledanja:',
+    useLast:'zadnje',
+    useOnline:'sada online',
+    useNever:'-',
+    useLoadFail:'popis koristenja nije ucitan',
+    bellOn:'Obavijesti ukljucene - dodir iskljucuje',
+    bellOff:'Obavijesti iskljucene - dodir ukljucuje',
+    notifTitle:'Obavijesti',
+    notifOn:'ukljucene',
+    notifOffState:'iskljucene',
+    notifStop:'kad stroj stane (stoj, pauza, gotov)',
+    notifOffline:'kad racunalo ne salje podatke (OFFLINE)',
+    notifPerm:'Android ne dopusta obavijesti ovoj aplikaciji.',
+    notifPermBtn:'Dozvoli obavijesti',
+    notifBat:'Stednja baterije moze odgoditi provjere dok je mobitel zakljucan.',
+    notifBatBtn:'Iskljuci stednju baterije',
+    notifTest:'Probna obavijest',
+    notifNoToken:'prvo upisi token',
+    appVer:function(v){return 'aplikacija '+v},
+    appUpd:'Provjeri nadogradnju',
+    appUpdState:{ide:'nova stranica, ucitavam...',nema:'vec je najnovije',greska:'provjera nije uspjela',preuzimam:'preuzimam...',dopustenje:'dozvoli instalaciju pa ponovi','greska-instalacija':'instalacija nije uspjela'},
+    saved:'spremljeno'
+  },
+  de:{
+    pageTitle:'Flexcell - Admin',
+    loading:'lade...',
+    gearTitle:'Einstellungen',
+    setupHeading:'Einstellungen',
+    lblRepo:'Privates Repo mit Daten (Benutzer/Repo)',
+    lblPath:'Datei',
+    lblBranch:'Branch',
+    lblToken:'GitHub-Token (alt, Reserve)',
+    lblEmail:'E-Mail',lblPass:'Passwort',btnLogin:'Anmelden',btnLogout:'Abmelden',
+    sbLoggedIn:function(e,u){return 'Angemeldet: '+e+(u?' ('+u+')':'')+' - Supabase'},sbLoggedOut:'Mit E-Mail und Passwort anmelden (Supabase).',
+    sbBadLogin:'Falsche E-Mail oder falsches Passwort',sbNoRole:'Anmeldung ok, aber das Konto hat noch keine Rolle',sbExpired:'Anmeldung abgelaufen - bitte neu anmelden',
+    sbNoData:function(u){return 'Konto hat Zugriff ('+u+'), aber in Supabase gibt es noch keinen Status - der PC in der Halle sendet nicht an Supabase (Optionen: Haken Supabase)'},
+    usrTitle:'Benutzer',usrName:'Name oder E-Mail',usrAdd:'Hinzufügen',usrPwd:'Neues Passwort',usrDel:'Löschen',usrNoRole:'OHNE ROLLE',usrMe:'du',
+    usrCreated:function(e,p){return 'Konto <b>'+e+'</b> - Passwort: <code>'+p+'</code><br>Jetzt notieren, es wird nicht mehr angezeigt. Auf der Seite: &#9881; &rarr; E-Mail + Passwort &rarr; Anmelden.'},
+    usrPwdNew:function(e,p){return 'Neues Passwort für <b>'+e+'</b>: <code>'+p+'</code><br>Jetzt notieren, es wird nicht mehr angezeigt.'},
+    usrDelAsk:function(e){return 'Konto '+e+' löschen? Diese Person kann sich dann nicht mehr anmelden.'},
+    usrPwdAsk:function(e){return 'Neues Passwort für '+e+' erstellen? Das alte gilt dann nicht mehr.'},
+    usrLastSeen:'zuletzt angesehen',usrSignIn:'Anmeldung',usrNever:'noch nie angesehen',
+    usrFnMissing:'Funktion korisnici ist in Supabase nicht eingerichtet (supabase/funkcija-korisnici.ts)',
+    usrFail:function(e){return 'fehlgeschlagen: '+e},usrWorking:'...',usrSaved:'gespeichert',
+    btnSave:'Speichern',
+    btnClose:'Schließen',
+    setupHint:'Diese Seite sendet eine Anfrage an den PC, deshalb braucht der Token das Recht <code>Contents: Read and write</code> auf das <b>private</b> Daten-Repo. Der Token bleibt nur auf diesem Handy gespeichert.',
+    btnReload:'Aktualisieren',
+    noMachines:'Keine Maschinendaten vorhanden.',
+    imgHint:'antippen für Programmbild',
+    imgLoading:'Bild wird geladen...',
+    imgFail:'Bild nicht verfügbar',
+    kvPieces:'Stück',
+    kvSecPerPart:'s/Stk',
+    kvEta:'Fertig',
+    kvLastPiece:'letztes Teil',
+    kvCounter:'Maschinenzähler',
+    next:'als nächstes',
+    planned:'geplant',
+    unplanned:'ungeplant',
+    csv:'CSV',
+    version:'Version',
+    now:'jetzt',
+    minSuffix:'Min',
+    qtySuffix:'Stk',
+    offlineSub:function(age){return 'letzte Daten vor '+age},
+    staleNote:function(age){return 'keine aktuellen Daten'+(age?' seit '+age:'')+' - App liest das Maschinenlog nicht'},
+    status:{rad:'Läuft',podesavanje:'Einrichtung',pauza:'Pause',stoj:'Gestoppt',gotov:'Fertig',prazno:'leer'},
+    langBtn:'HR',
+    errTokenRejected:function(s){return 'Token nicht akzeptiert (HTTP '+s+') - Einstellungen prüfen'},
+    errNoFile:'Datei fehlt oder Token hat keinen Zugriff auf das Repo (404)',
+    srcLabel:'Quelle',srcLocal:'lokale Datei',
+    errHttp:function(s){return 'HTTP '+s},
+    errBadJson:'ungültiges JSON',
+    errFetchPrefix:'Daten können nicht abgerufen werden: ',
+    anaTitle:'Analyse',
+    anaBtn:'Analyse anfordern',
+    anaHint:'Der PC übernimmt die Anfrage in seinem Zyklus (meist in 1-5 Min) und legt die Analyse im Repo ab. Der PC muss eingeschaltet sein.',
+    anaNoToken:'Token in den Einstellungen eintragen',
+    anaNoWrite:'Token hat kein Schreibrecht',
+    anaSending:'Anfrage wird gesendet...',
+    anaWaiting:function(s){return 'warte auf den PC... '+s},
+    anaDone:'fertig',
+    anaFailed:function(e){return 'fehlgeschlagen: '+e},
+    anaTimeout:'PC hat nicht geantwortet - ist er eingeschaltet?',
+    anaListEmpty:'Noch keine gespeicherten Analysen.',
+    anaDl:'Herunterladen',
+    anaDlWorking:'...',
+    anaDlFailed:function(e){return 'Download fehlgeschlagen: '+e},
+    anaHours:function(h){return h+' h'},
+    anaNightly:'nächtlich',
+    useTitle:'Nutzung',
+    useEmpty:'Noch keine Nutzungsdaten.',
+    useName:'Name',
+    useViews:'Aufrufe:',
+    useLast:'zuletzt',
+    useOnline:'gerade online',
+    useNever:'-',
+    useLoadFail:'Nutzungsliste nicht geladen',
+    bellOn:'Benachrichtigungen an - tippen zum Ausschalten',
+    bellOff:'Benachrichtigungen aus - tippen zum Einschalten',
+    notifTitle:'Benachrichtigungen',
+    notifOn:'an',
+    notifOffState:'aus',
+    notifStop:'wenn eine Maschine stoppt (Gestoppt, Pause, Fertig)',
+    notifOffline:'wenn der PC keine Daten sendet (OFFLINE)',
+    notifPerm:'Android erlaubt dieser App keine Benachrichtigungen.',
+    notifPermBtn:'Benachrichtigungen erlauben',
+    notifBat:'Der Akku-Sparmodus kann die Prüfung bei gesperrtem Handy verzögern.',
+    notifBatBtn:'Akku-Optimierung ausschalten',
+    notifTest:'Testbenachrichtigung',
+    notifNoToken:'zuerst Token eintragen',
+    appVer:function(v){return 'App '+v},
+    appUpd:'Nach Update suchen',
+    appUpdState:{ide:'neue Seite, lade...',nema:'bereits aktuell',greska:'Prüfung fehlgeschlagen',preuzimam:'lade herunter...',dopustenje:'Installation erlauben und wiederholen','greska-instalacija':'Installation fehlgeschlagen'},
+    saved:'gespeichert'
+  }
+};
+var q=new URLSearchParams(location.search);
+var CFG_KEY='flexcell-status-cfg';
+var LANG_KEY='flexcell-status-lang';
+var PEND_KEY='flexcell-analiza-pending';
+// Zahtjev i odgovor su obicne datoteke u istom privatnom repou - nema servera u sredini.
+var ANA_DIR='analiza';
+var REQ_PATH='zahtjevi/analiza.json';
+var ANS_PATH='zahtjevi/odgovor.json';
+var REQ_TIMEOUT_MS=20*60*1000;
+var POLL_MS=10000;
+var cards=document.getElementById('cards'),sumEl=document.getElementById('sum'),ageEl=document.getElementById('age'),errEl=document.getElementById('err'),srcEl=document.getElementById('src'),setupEl=document.getElementById('setup');
+var anaStateEl=document.getElementById('anaState'),anaListEl=document.getElementById('anaList'),anaBtn=document.getElementById('anaReq'),anaHoursEl=document.getElementById('anaHours');
+// Postavke se cuvaju samo na ovom mobitelu. Preko ?repo=&path=&branch= se mogu i predati linkom
+// (token se linkom NE predaje).
+function loadCfg(){
+  var c={repo:'dadii82/flexcell-stanje',path:'stanje.json',branch:'main',token:''};
+  try{var raw=localStorage.getItem(CFG_KEY);if(raw){var j=JSON.parse(raw);if(j&&typeof j==='object')for(var k in c)if(j[k])c[k]=String(j[k])}}catch(e){}
+  ['repo','path','branch'].forEach(function(k){if(q.get(k))c[k]=String(q.get(k))});
+  return c;
+}
+function saveCfg(c){try{localStorage.setItem(CFG_KEY,JSON.stringify(c))}catch(e){}}
+function loadLang(){
+  var l=q.get('lang');
+  if(l==='hr'||l==='de')return l;
+  try{var raw=localStorage.getItem(LANG_KEY);if(raw==='hr'||raw==='de')return raw}catch(e){}
+  return 'hr';
+}
+function saveLang(l){try{localStorage.setItem(LANG_KEY,l)}catch(e){}}
+// Zahtjev preziv i zatvaranje stranice: mobitel uspije stranicu ubiti dok PC jos radi izvoz.
+function loadPending(){try{var j=JSON.parse(localStorage.getItem(PEND_KEY)||'null');return(j&&j.id)?j:null}catch(e){return null}}
+function savePending(p){try{p?localStorage.setItem(PEND_KEY,JSON.stringify(p)):localStorage.removeItem(PEND_KEY)}catch(e){}}
+var cfg=loadCfg();
+var lang=loadLang();
+var lastData=null;
+var pending=loadPending();
+var SRC=q.get('src')||'';
+function t(){return I18N[lang]}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return c==='&'?'&amp;':c==='<'?'&lt;':c==='>'?'&gt;':'&quot;'})}
+function statusClass(s){s=String(s||'');return s==='rad'?'b-rad':s==='podesavanje'?'b-pod':s==='pauza'?'b-pau':s==='stoj'?'b-stoj':s==='gotov'?'b-got':'b-prazno'}
+// Nalog na 100 % (sve komade napravio) a stroj stoji/pauzira = gotov, ne 'stoj'.
+function cardStatus(m){var s=String(m&&m.status||'');if((s==='stoj'||s==='pauza')&&!m.stale&&Number(m.total)>0&&Number(m.done)>=Number(m.total))return 'gotov';return s}
+function statusLabel(s){var m=t().status;return (s&&m[s])?m[s]:m.prazno}
+function num(v){return (v===0||v)?v:'-'}
+function slug(v){return String(v||'').trim().replace(/^https?:\/\/github\.com\//i,'').replace(/\.git$/i,'').replace(/^\/+|\/+$/g,'')}
+function token(){return String(cfg.token||'').trim()}
+function applyStaticText(){
+  var d=t();
+  document.title=d.pageTitle;
+  document.documentElement.lang=lang;
+  document.getElementById('h1Title').textContent=window.AndroidApp?'Flexcell':d.pageTitle;
+  document.getElementById('gear').title=d.gearTitle;
+  document.getElementById('setupHeading').textContent=d.setupHeading;
+  document.getElementById('lblRepo').textContent=d.lblRepo;
+  document.getElementById('lblPath').textContent=d.lblPath;
+  document.getElementById('lblBranch').textContent=d.lblBranch;
+  document.getElementById('lblToken').textContent=d.lblToken;
+  document.getElementById('lblEmail').textContent=d.lblEmail;
+  document.getElementById('lblPass').textContent=d.lblPass;
+  document.getElementById('sbLogin').textContent=d.btnLogin;
+  document.getElementById('sbLogout').textContent=d.btnLogout;
+  document.getElementById('usrTitle').textContent=d.usrTitle;
+  document.getElementById('usrName').placeholder=d.usrName;
+  document.getElementById('usrAdd').textContent=d.usrAdd;
+  sbShowInfo();
+  document.getElementById('cfgSave').textContent=d.btnSave;
+  document.getElementById('setupHint').innerHTML=d.setupHint;
+  document.getElementById('reload').textContent=d.btnReload;
+  document.getElementById('langBtn').textContent=d.langBtn;
+  document.getElementById('anaTitle').textContent=d.anaTitle;
+  document.getElementById('useTitle').textContent=d.useTitle;
+  document.getElementById('anaHint').textContent=d.anaHint;
+  anaBtn.textContent=d.anaBtn;
+  if(!lastData)ageEl.textContent=d.loading;
+}
+// Aplikacija salje staleMin (minute, -1 = nepoznato) pa se napomena prevodi ovdje, ne u aplikaciji.
+function staleText(m){
+  var min=Number(m.staleMin),age='';
+  if(isFinite(min)&&min>=0)age=min>=120?Math.round(min/60)+' h':min+' min';
+  return t().staleNote(age);
+}
+// Starost podataka se racuna i izmedju dohvacanja (setInterval), da OFFLINE izadje i kad dohvat ne uspije.
+var offlineEl=document.getElementById('offline'),offlineSubEl=document.getElementById('offlineSub');
+function updateAge(){
+  var d=lastData;if(!d)return;
+  var dict=t();
+  var at=Date.parse(d.at||'')||0,min=at?Math.round((Date.now()-at)/60000):null;
+  var off=min!=null&&min>15;
+  ageEl.textContent=(d.atText||'')+(min!=null?'  ('+(min<1?dict.now:min+' '+dict.minSuffix)+')':'');
+  ageEl.className=off?'stale':'';
+  document.body.classList.toggle('offline',off);
+  offlineEl.hidden=!off;
+  if(off)offlineSubEl.textContent=dict.offlineSub(min>=120?Math.round(min/60)+' h':min+' '+dict.minSuffix);
+}
+function render(d){
+  lastData=d;
+  var dict=t();
+  var ms=(d.machines||[]);
+  cards.innerHTML=ms.map(function(m){
+    var pct=Math.max(0,Math.min(100,Number(m.pct)||0));
+    var kv=[];
+    if(m.done!=null&&m.total!=null)kv.push('<span>'+dict.kvPieces+' <b>'+num(m.done)+' / '+num(m.total)+'</b></span>');
+    if(m.secPerPart)kv.push('<span>'+dict.kvSecPerPart+' <b>'+m.secPerPart+'</b></span>');
+    if(m.etaText)kv.push('<span>'+dict.kvEta+' <b>'+esc(m.etaText)+'</b></span>');
+    if(m.lastPieceText)kv.push('<span>'+dict.kvLastPiece+' <b>'+esc(m.lastPieceText)+'</b></span>');
+    if(m.counter!=null)kv.push('<span>'+dict.kvCounter+' <b>'+num(m.counter)+'</b></span>');
+    var nx=(m.next||[]).map(function(n){return esc(n.program)+(n.ip?' / '+esc(n.ip):'')+(n.qty?' ('+n.qty+' '+dict.qtySuffix+')':'')}).join(' &rarr; ');
+    var cardCls=m.img?'card hasimg':'card';
+    var cardAttr=m.img?' data-imgpath="'+esc(m.img)+'" title="'+esc(dict.imgHint)+'"':'';
+    return '<div class="'+cardCls+'"'+cardAttr+'>'
+      +'<div class="top"><span class="mach">'+esc(m.machine)+'</span>'
+      +'<span><span class="prog">'+esc(m.program||'-')+'</span> <span class="ip">'+esc(m.ip||'')+'</span></span>'
+      +(m.img?'<span class="imgtag">&#128247;</span>':'')
+      +'<span class="badge '+statusClass(cardStatus(m))+'">'+esc(statusLabel(cardStatus(m)))+'</span></div>'
+      +(m.stale?'<div class="stalenote">'+esc(staleText(m))+'</div>':'')
+      +(m.name?'<div class="ip" style="margin:-4px 0 6px">'+esc(m.name)+'</div>':'')
+      +'<div class="bar"><i style="width:'+pct+'%"></i><span>'+pct+' %</span></div>'
+      +'<div class="kv">'+kv.join('')+'</div>'
+      +(nx?'<div class="next">'+dict.next+': <b>'+nx+'</b></div>':'')
+      +'</div>';
+  }).join('')||'<div class="card">'+dict.noMachines+'</div>';
+  var p=d.plan||{},s=[];
+  if(p.planned!=null)s.push('<span>'+dict.planned+' <b>'+p.planned+'</b></span>');
+  if(p.unplanned!=null)s.push('<span>'+dict.unplanned+' <b>'+p.unplanned+'</b></span>');
+  if(p.csv)s.push('<span>'+dict.csv+' <b>'+esc(p.csv)+'</b>'+(p.csvText?' ('+esc(p.csvText)+')':'')+'</span>');
+  if(d.app)s.push('<span>'+dict.version+' <b>'+esc(d.app)+'</b></span>');
+  sumEl.innerHTML=s.join('');
+  updateAge();
+  bindCardImages();
+}
+// Slika se ne prikazuje na kartici: klik bilo gdje po kartici je otvori preko cijelog
+// ekrana, klik bilo gdje (ili Esc) je zatvori. Dohvaca se tek na klik i pamti u imgCache.
+var imgCache={},lbSeq=0;
+var lb=document.getElementById('lb'),lbImg=document.getElementById('lbimg'),lbNote=document.getElementById('lbnote');
+function fetchImage(path){
+  if(imgCache[path])return Promise.resolve(imgCache[path]);
+  if(sbOn()){
+    var name=String(path).replace(/^\/+/,'').replace(/^slike\//,'').split('?')[0];
+    return sbFetch('/storage/v1/object/authenticated/slike/'+name.split('/').map(encodeURIComponent).join('/'))
+      .then(function(r){return r.ok?r.blob():null})
+      .then(function(b){if(!b)return '';var u=URL.createObjectURL(b);imgCache[path]=u;return u})
+      .catch(function(){return ''});
+  }
+  var repo=slug(cfg.repo),tok=String(cfg.token||'').trim();
+  // Bez tokena (lokalni server / javni repo): pokusaj datoteku uz stranicu.
+  if(!repo||!tok)return Promise.resolve(path+(path.indexOf('?')<0?'?':'&')+'t='+Date.now());
+  return fetch('https://api.github.com/repos/'+repo+'/contents/'+encodeURI(path.replace(/^\/+/,''))
+      +'?ref='+encodeURIComponent(cfg.branch||'main')+'&t='+Date.now(),
+      {cache:'no-store',headers:{Authorization:'Bearer '+tok,Accept:'application/vnd.github.raw','X-GitHub-Api-Version':'2022-11-28'}})
+    .then(function(r){return r.ok?r.blob():null})
+    .then(function(b){if(!b)return '';var u=URL.createObjectURL(b);imgCache[path]=u;return u})
+    .catch(function(){return ''});
+}
+function closeImage(){lbSeq++;lb.hidden=true;lbImg.removeAttribute('src');lbNote.textContent=''}
+function openImage(path){
+  if(!path)return;
+  var seq=++lbSeq;
+  lbImg.removeAttribute('src');
+  lbNote.textContent=imgCache[path]?'':t().imgLoading;
+  lb.hidden=false;
+  fetchImage(path).then(function(u){
+    if(seq!==lbSeq)return;                    // u medjuvremenu zatvoreno ili otvorena druga slika
+    if(!u){lbNote.textContent=t().imgFail;return}
+    lbNote.textContent='';lbImg.src=u;
+  });
+}
+function bindCardImages(){
+  Array.prototype.forEach.call(cards.querySelectorAll('.card[data-imgpath]'),function(el){
+    el.addEventListener('click',function(){openImage(el.getAttribute('data-imgpath')||'')});
+  });
+}
+lb.addEventListener('click',closeImage);
+document.addEventListener('keydown',function(e){if(!lb.hidden&&(e.key==='Escape'||e.key==='Esc'))closeImage()});
+function fail(msg){errEl.textContent=msg}
+// --- Supabase (od 2.5.69): prijava e-mailom i lozinkom, stranica pamti samo sesiju (nikad lozinku).
+// Bez prijave radi i dalje stari nacin preko GitHub tokena.
+var SB_URL='https://cfgiynmuslgmfnxefvyr.supabase.co',SB_KEY='sb_publishable__Raj6h6cefeeKJrOgbc-YA_9diun6x2';
+var SB_SES_KEY='flexcell-sb-session';
+var sbSes=null;try{sbSes=JSON.parse(localStorage.getItem(SB_SES_KEY)||'null')}catch(e){}
+var sbRole='';
+function sbSave(s){sbSes=s;try{s?localStorage.setItem(SB_SES_KEY,JSON.stringify(s)):localStorage.removeItem(SB_SES_KEY)}catch(e){}}
+function sbOn(){return !!(sbSes&&sbSes.refresh_token)}
+function sbFromAuth(j){return {access_token:j.access_token,refresh_token:j.refresh_token,expires_at:Date.now()+((Number(j.expires_in)||3600)-60)*1000,email:(j.user&&j.user.email)||(sbSes&&sbSes.email)||'',uid:(j.user&&j.user.id)||(sbSes&&sbSes.uid)||''}}
+function sbAuth(grant,body){
+  return fetch(SB_URL+'/auth/v1/token?grant_type='+grant,{method:'POST',headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:JSON.stringify(body)})
+    .then(function(r){return r.json().catch(function(){return {}}).then(function(j){if(!r.ok||!j.access_token){var e=new Error(j.error_description||j.msg||('HTTP '+r.status));e.status=r.status;throw e}return j})});
+}
+var sbRefreshing=null;
+function sbToken(){
+  if(!sbOn())return Promise.reject(new Error('nema prijave'));
+  if(sbSes.access_token&&Date.now()<sbSes.expires_at)return Promise.resolve(sbSes.access_token);
+  if(!sbRefreshing)sbRefreshing=sbAuth('refresh_token',{refresh_token:sbSes.refresh_token})
+    .then(function(j){sbSave(sbFromAuth(j));appSync();return sbSes.access_token})
+    .catch(function(e){if(e.status===400||e.status===401){sbSave(null);sbShowInfo(t().sbExpired)}throw e})
+    .then(function(x){sbRefreshing=null;return x},function(e){sbRefreshing=null;throw e});
+  return sbRefreshing;
+}
+function sbFetch(path,opt){
+  opt=opt||{};
+  return sbToken().then(function(tok){
+    var h=opt.headers||{};h.apikey=SB_KEY;h.Authorization='Bearer '+tok;opt.headers=h;opt.cache='no-store';
+    return fetch(SB_URL+path,opt);
+  });
+}
+function sbJson(path,opt){
+  return sbFetch(path,opt).then(function(r){
+    if(r.status===401||r.status===403)throw new Error(t().sbExpired);
+    if(!r.ok)return r.text().then(function(x){var m='';try{var j=JSON.parse(x);m=j.message||j.greska||j.error||''}catch(e){}throw new Error(t().errHttp(r.status)+(m?' '+m:''))});
+    return r.text().then(function(x){return x?JSON.parse(x):null});
+  });
+}
+function sbLoadRole(){
+  return sbJson('/rest/v1/rpc/moja_uloga',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})
+    .then(function(u){sbRole=u||'';sbShowInfo();document.getElementById('usr').hidden=sbRole!=='admin';if(sbRole==='admin')loadUsers();return sbRole});
+}
+function sbShowInfo(msg){
+  var el=document.getElementById('sbInfo');if(!el)return;
+  var d=t();
+  el.textContent=msg||(sbOn()?d.sbLoggedIn(sbSes.email||'',sbRole):d.sbLoggedOut);
+  document.getElementById('sbLogout').hidden=!sbOn();
+  document.getElementById('sbLogin').hidden=sbOn();
+  document.getElementById('cfgPass').hidden=document.getElementById('lblPass').hidden=sbOn();
+}
+function sbLogin(){
+  var email=String(document.getElementById('cfgEmail').value||'').trim(),pass=String(document.getElementById('cfgPass').value||'');
+  if(!email||!pass)return;
+  sbShowInfo('...');
+  sbAuth('password',{email:email,password:pass}).then(function(j){
+    document.getElementById('cfgPass').value='';
+    sbSave(sbFromAuth(j));
+    appSync();
+    return sbLoadRole();
+  }).then(function(u){
+    if(!u){sbShowInfo(t().sbNoRole);return}
+    setupEl.hidden=true;appBoxEl.hidden=true;
+    load();loadAnaList();loadVisits();
+  }).catch(function(e){sbShowInfo(e&&e.status===400?t().sbBadLogin:(t().errFetchPrefix+(e&&e.message||e)))});
+}
+function sbLogout(){
+  var tok=sbSes&&sbSes.access_token;
+  if(tok)fetch(SB_URL+'/auth/v1/logout',{method:'POST',headers:{apikey:SB_KEY,Authorization:'Bearer '+tok}}).catch(function(){});
+  sbSave(null);sbRole='';imgCache={};document.getElementById('usr').hidden=true;
+  appSync();sbShowInfo();load();loadAnaList();loadVisits();
+}
+// Ima li stranica nacin za citanje (Supabase prijava ili GitHub token)?
+function canRead(){return sbOn()||!!(token()&&slug(cfg.repo))}
+// Privatni repo se cita preko contents API-ja (Accept: raw vraca sam sadrzaj datoteke).
+// Ako token nije unesen, stranica pada na obicnu datoteku uz sebe - za javni repo / lokalni server.
+// Oznaka u kutu: kind = 'github' | 'local' (kasnije 'supabase'), st = '' (ucitava) | 'ok' | 'bad'.
+var srcKind='',srcTitle='',srcSt='';
+function setSrcBadge(kind,st,title){
+  if(kind)srcKind=kind;if(title!=null)srcTitle=title;if(st!=null)srcSt=st;
+  var el=document.getElementById('srcBadge'),tx=document.getElementById('srcBadgeTxt');if(!el||!tx)return;
+  var name=srcKind==='github'?'GitHub':srcKind==='supabase'?'Supabase':t().srcLocal;
+  tx.textContent=t().srcLabel+': '+name;el.className=srcSt||'';el.title=srcTitle||'';
+}
+function load(){
+  errEl.textContent='';
+  if(sbOn())return loadSb();
+  var repo=slug(cfg.repo),tok=token();
+  var url,opt={cache:'no-store'};
+  if(repo&&tok){
+    url='https://api.github.com/repos/'+repo+'/contents/'+encodeURI(String(cfg.path||'stanje.json').replace(/^\/+/,''))
+       +'?ref='+encodeURIComponent(cfg.branch||'main')+'&t='+Date.now();
+    opt.headers={Authorization:'Bearer '+tok,Accept:'application/vnd.github.raw','X-GitHub-Api-Version':'2022-11-28'};
+    srcEl.textContent=repo+'/'+(cfg.path||'stanje.json');
+    setSrcBadge('github','',srcEl.textContent);
+  }else{
+    var f=SRC||'stanje.json';
+    url=f+(f.indexOf('?')<0?'?':'&')+'t='+Date.now();
+    srcEl.textContent=f;
+    setSrcBadge('local','',f);
+  }
+  fetch(url,opt).then(function(r){
+    var dict=t();
+    if(r.status===401||r.status===403)throw new Error(dict.errTokenRejected(r.status));
+    if(r.status===404)throw new Error(dict.errNoFile);
+    if(!r.ok)throw new Error(dict.errHttp(r.status));
+    return r.text();
+  }).then(function(txt){
+    var d;try{d=JSON.parse(txt)}catch(e){throw new Error(t().errBadJson)}
+    render(d);
+    setSrcBadge('','ok');
+  }).catch(function(e){
+    fail(t().errFetchPrefix+(e&&e.message||e));
+    setSrcBadge('','bad');
+    if(!slug(cfg.repo)||!token())openSetup();
+  });
+}
+function loadSb(){
+  srcEl.textContent='Supabase · '+(sbSes.email||'');
+  setSrcBadge('supabase','',SB_URL.replace(/^https:\/\//,''));
+  sbJson('/rest/v1/stanje?id=eq.flexcell&select=podaci,at').then(function(rows){
+    if(!rows||!rows.length)return sbJson('/rest/v1/rpc/moja_uloga',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})
+      .then(function(u){throw new Error(u?t().sbNoData(u):t().sbNoRole)});
+    render(rows[0].podaci||{});
+    setSrcBadge('','ok');
+  }).catch(function(e){
+    fail(t().errFetchPrefix+(e&&e.message||e));
+    setSrcBadge('','bad');
+    if(!sbOn())openSetup();
+  });
+}
+// ---- analiza: zahtjev, odgovor, popis ----
+function ghUrl(path){return 'https://api.github.com/repos/'+slug(cfg.repo)+'/contents/'+encodeURI(String(path||'').replace(/^\/+/,''))}
+function ghHeaders(accept){return{Authorization:'Bearer '+token(),Accept:accept||'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}}
+// Bez kesiranja: GitHub API salje max-age=60, pa bi se stari odgovor/sha vrtio u krug.
+function ghGet(path,accept){
+  return fetch(ghUrl(path)+'?ref='+encodeURIComponent(cfg.branch||'main')+'&t='+Date.now(),{cache:'no-store',headers:ghHeaders(accept)});
+}
+function b64(s){return btoa(unescape(encodeURIComponent(String(s))))}
+function randId(){
+  var a=new Uint8Array(8);
+  if(window.crypto&&crypto.getRandomValues)crypto.getRandomValues(a);
+  else for(var i=0;i<8;i++)a[i]=Math.floor(Math.random()*256);
+  return Array.prototype.map.call(a,function(x){return ('0'+x.toString(16)).slice(-2)}).join('');
+}
+function setAnaState(txt,cls){anaStateEl.textContent=txt||'';anaStateEl.className='anastate'+(cls?' '+cls:'')}
+function elapsedText(ms){
+  var s=Math.max(0,Math.round(ms/1000));
+  return Math.floor(s/60)+':'+('0'+(s%60)).slice(-2);
+}
+function sendRequest(){
+  var dict=t();
+  if(!canRead()){setAnaState(dict.anaNoToken,'bad');openSetup();return}
+  var hours=Math.max(1,Math.round(Number(anaHoursEl.value)||12));
+  anaBtn.disabled=true;
+  setAnaState(dict.anaSending,'work');
+  if(sbOn()){
+    var sid=randId();
+    sbJson('/rest/v1/zahtjevi',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({id:sid,sati:hours})})
+      .then(function(){pending={id:sid,hours:hours,at:Date.now(),sb:1};savePending(pending);tickPending()})
+      .catch(function(e){setAnaState(t().anaFailed(e&&e.message||e),'bad');anaBtn.disabled=false});
+    return;
+  }
+  ghGet(REQ_PATH).then(function(r){
+    if(r.status===404)return '';
+    if(r.status===401||r.status===403)throw new Error(dict.errTokenRejected(r.status));
+    if(!r.ok)throw new Error(dict.errHttp(r.status));
+    return r.json().then(function(j){return String(j&&j.sha||'')});
+  }).then(function(sha){
+    var id=randId();
+    var body={hours:hours,id:id,at:new Date().toISOString(),from:'analiza.html'};
+    var payload={message:'zahtjev za analizu '+hours+'h',content:b64(JSON.stringify(body)),branch:cfg.branch||'main'};
+    if(sha)payload.sha=sha;
+    return fetch(ghUrl(REQ_PATH),{method:'PUT',cache:'no-store',headers:ghHeaders(),body:JSON.stringify(payload)}).then(function(r){
+      if(r.status===403)throw new Error(dict.anaNoWrite);
+      if(r.status===401)throw new Error(dict.errTokenRejected(r.status));
+      if(!r.ok)throw new Error(dict.errHttp(r.status));
+      pending={id:id,hours:hours,at:Date.now()};
+      savePending(pending);
+      tickPending();
+    });
+  }).catch(function(e){
+    setAnaState(t().anaFailed(e&&e.message||e),'bad');
+    anaBtn.disabled=false;
+  });
+}
+function tickPending(){
+  if(!pending){anaBtn.disabled=false;return}
+  var waited=Date.now()-Number(pending.at||0);
+  if(waited>REQ_TIMEOUT_MS){
+    pending=null;savePending(null);anaBtn.disabled=false;
+    setAnaState(t().anaTimeout,'bad');
+    return;
+  }
+  anaBtn.disabled=true;
+  setAnaState(t().anaWaiting(elapsedText(waited)),'work');
+}
+function pollAnswer(){
+  if(pending&&pending.sb){
+    if(!sbOn())return;
+    sbJson('/rest/v1/zahtjevi?id=eq.'+encodeURIComponent(pending.id)+'&select=stanje,odgovor').then(function(rows){
+      var r=rows&&rows[0];
+      if(!r||r.stanje==='novo'||!pending)return;
+      var j=r.odgovor||{};
+      pending=null;savePending(null);anaBtn.disabled=false;
+      if(r.stanje==='gotovo'&&j.ok!==false){setAnaState(t().anaDone,'ok');loadAnaList()}
+      else setAnaState(t().anaFailed(String(j.err||r.stanje)),'bad');
+    }).catch(function(){});
+    return;
+  }
+  if(!pending||!token()||!slug(cfg.repo))return;
+  ghGet(ANS_PATH,'application/vnd.github.raw').then(function(r){
+    if(!r.ok)return null;
+    return r.text();
+  }).then(function(txt){
+    if(!txt||!pending)return;
+    var j;try{j=JSON.parse(txt)}catch(e){return}
+    if(!j||String(j.id||'')!==String(pending.id))return;
+    pending=null;savePending(null);anaBtn.disabled=false;
+    if(j.ok){
+      setAnaState(t().anaDone,'ok');
+      loadAnaList();
+    }else{
+      setAnaState(t().anaFailed(String(j.err||'')),'bad');
+    }
+  }).catch(function(){});
+}
+// flexcell-analiza-12h-20260918-092700.json.gz  ->  "12 h - 18.09.2026 09:27"
+function describeAnaFile(name){
+  var m=/^flexcell-analiza-(\d+)h-(\d{4})(\d{2})(\d{2})(?:-(\d{2})(\d{2})(\d{2}))?\./i.exec(String(name||''));
+  if(!m)return{label:String(name||''),sub:'',ts:0};
+  var h=Number(m[1]),y=Number(m[2]),mo=Number(m[3]),d=Number(m[4]);
+  var hh=m[5]?Number(m[5]):0,mi=m[6]?Number(m[6]):0,ss=m[7]?Number(m[7]):0;
+  var dateTxt=('0'+d).slice(-2)+'.'+('0'+mo).slice(-2)+'.'+y+(m[5]?' '+('0'+hh).slice(-2)+':'+('0'+mi).slice(-2):'');
+  return{label:t().anaHours(h)+'  -  '+dateTxt,sub:m[5]?'':t().anaNightly,ts:new Date(y,mo-1,d,hh,mi,ss).getTime()};
+}
+function sizeText(bytes){
+  var b=Number(bytes)||0;
+  return b>=1048576?(b/1048576).toFixed(1)+' MB':Math.max(1,Math.round(b/1024))+' kB';
+}
+function loadAnaList(){
+  if(!canRead()){anaListEl.innerHTML='';return}
+  var src=sbOn()
+    ?sbJson('/storage/v1/object/list/analiza',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prefix:'',limit:100,sortBy:{column:'name',order:'desc'}})})
+      .then(function(arr){return (arr||[]).filter(function(x){return x&&x.id}).map(function(x){return {type:'file',name:x.name,path:x.name,size:x.metadata&&x.metadata.size,sb:1}})})
+    :ghGet(ANA_DIR).then(function(r){
+    if(r.status===404)return [];
+    if(!r.ok)throw new Error(t().errHttp(r.status));
+    return r.json();
+  });
+  src.then(function(arr){
+    if(!Array.isArray(arr))arr=[];
+    var rows=arr.filter(function(x){return x&&x.type==='file'}).map(function(x){
+      var info=describeAnaFile(x.name);
+      return{name:String(x.name||''),path:String(x.path||''),size:Number(x.size)||0,label:info.label,sub:info.sub,ts:info.ts,sb:!!x.sb};
+    }).sort(function(a,b){return (b.ts-a.ts)||(a.name<b.name?1:-1)}).slice(0,10);
+    if(!rows.length){anaListEl.innerHTML='<div class="analistempty">'+esc(t().anaListEmpty)+'</div>';return}
+    anaListEl.innerHTML=rows.map(function(r,i){
+      var sub=[r.sub,sizeText(r.size)].filter(Boolean).join('  -  ');
+      return '<div class="anaitem"><span class="nm"><b>'+esc(r.label)+'</b><span>'+esc(sub)+'</span></span>'
+        +'<button data-i="'+i+'">'+esc(t().anaDl)+'</button></div>';
+    }).join('');
+    Array.prototype.forEach.call(anaListEl.querySelectorAll('button[data-i]'),function(b){
+      b.addEventListener('click',function(){downloadAna(rows[Number(b.getAttribute('data-i'))],b)});
+    });
+  }).catch(function(){anaListEl.innerHTML=''});
+}
+// .gz se raspakira u pregledniku da na mobitelu zavrsi obican .json; ako preglednik nema
+// DecompressionStream, spremi se stisnuta datoteka kakva jest.
+function downloadAna(row,btn){
+  if(!row)return;
+  var dict=t(),old=btn.textContent;
+  btn.disabled=true;btn.textContent=dict.anaDlWorking;
+  (row.sb?sbFetch('/storage/v1/object/authenticated/analiza/'+row.name.split('/').map(encodeURIComponent).join('/')):ghGet(row.path,'application/vnd.github.raw')).then(function(r){
+    if(!r.ok)throw new Error(dict.errHttp(r.status));
+    return r.arrayBuffer();
+  }).then(function(buf){
+    var gz=/\.gz$/i.test(row.name);
+    if(gz&&typeof DecompressionStream!=='undefined'){
+      return new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'))).blob()
+        .then(function(b){return{blob:b,name:row.name.replace(/\.gz$/i,'')}});
+    }
+    return{blob:new Blob([buf]),name:row.name};
+  }).then(function(o){
+    if(APP&&APP.spremi){
+      return new Promise(function(res){var fr=new FileReader();fr.onload=function(){res(String(fr.result||''))};fr.readAsDataURL(o.blob)}).then(function(du){
+        APP.spremi(o.name,String(du).replace(/^data:[^,]*,/,''));
+        btn.disabled=false;btn.textContent=old;
+      });
+    }
+    var u=URL.createObjectURL(o.blob),a=document.createElement('a');
+    a.href=u;a.download=o.name;document.body.appendChild(a);a.click();
+    setTimeout(function(){URL.revokeObjectURL(u);a.remove()},1500);
+    btn.disabled=false;btn.textContent=old;
+  }).catch(function(e){
+    btn.disabled=false;btn.textContent=old;
+    setAnaState(dict.anaDlFailed(e&&e.message||e),'bad');
+  });
+}
+function openSetup(){
+  document.getElementById('cfgRepo').value=cfg.repo||'';
+  document.getElementById('cfgPath').value=cfg.path||'stanje.json';
+  document.getElementById('cfgBranch').value=cfg.branch||'main';
+  document.getElementById('cfgToken').value=cfg.token||'';
+  if(sbOn())document.getElementById('cfgEmail').value=sbSes.email||'';
+  sbShowInfo();
+  setupEl.hidden=false;
+}
+document.getElementById('gear').addEventListener('click',function(){if(setupEl.hidden){openSetup();appBoxEl.hidden=!APP;appRefresh()}else{setupEl.hidden=true;appBoxEl.hidden=true}});
+document.getElementById('cfgSave').addEventListener('click',function(){
+  cfg={
+    repo:slug(document.getElementById('cfgRepo').value),
+    path:String(document.getElementById('cfgPath').value||'stanje.json').trim()||'stanje.json',
+    branch:String(document.getElementById('cfgBranch').value||'main').trim()||'main',
+    token:String(document.getElementById('cfgToken').value||'').trim()
+  };
+  saveCfg(cfg);
+  setupEl.hidden=true;
+  appBoxEl.hidden=true;
+  appSync();
+  load();
+  loadAnaList();
+});
+document.getElementById('langBtn').addEventListener('click',function(){
+  lang=(lang==='hr')?'de':'hr';
+  saveLang(lang);
+  applyStaticText();
+  if(lastData)render(lastData);
+  setSrcBadge();
+  tickPending();
+  loadAnaList();
+  if(usrRows.length)renderUsers();
+  appSync();
+  appRefresh();
+});
+document.getElementById('reload').addEventListener('click',function(){load();loadAnaList();loadVisits();loadUsers()});
+// --- Koristenje: admin cita cache/<id>.json i prikazuje po osobi ---
+// Imena su SAMO na ovom (admin) uredaju - u repou ih nema. Kljuc je otisak tokena, uz zadnje 4
+// znamenke tokena da se prepozna cija je datoteka pri prvom imenovanju.
+var VNAMES_KEY='flexcell-visit-names';
+var useStateEl=document.getElementById('useState'),useListEl=document.getElementById('useList');
+function loadVNames(){try{var j=JSON.parse(localStorage.getItem(VNAMES_KEY)||'{}');return(j&&typeof j==='object')?j:{}}catch(e){return{}}}
+function saveVName(id,name){try{var m=loadVNames();if(name)m[id]=name;else delete m[id];localStorage.setItem(VNAMES_KEY,JSON.stringify(m))}catch(e){}}
+// Gledanja razmaknuta manje od 2 min od prethodnog su isto gledanje (ostaje prvo).
+function mergeViews(v){
+  var out=[],prev=0;
+  (v||[]).map(function(x){return Date.parse(x||'')||0}).filter(Boolean).sort(function(a,b){return a-b}).forEach(function(ms){
+    if(!prev||ms-prev>=2*60*1000)out.push(new Date(ms).toISOString());prev=ms;
+  });
+  return out;
+}
+// Zadnjih 6 gledanja (najnovije prvo); stari zapisi imaju sessions[].s umjesto views.
+function lastViews(rec){
+  var v=(rec&&rec.views&&rec.views.slice)?rec.views.slice():(((rec&&rec.sessions)||[]).map(function(x){return x&&x.s}).filter(Boolean));
+  var p=function(n){return(n<10?'0':'')+n};
+  return mergeViews(v).slice(-6).reverse().map(function(iso){var dt=new Date(iso);return isNaN(dt)?'':p(dt.getDate())+'.'+p(dt.getMonth()+1)+'. '+p(dt.getHours())+':'+p(dt.getMinutes())}).filter(Boolean);
+}
+// Koliko je proslo od zadnje aktivnosti, npr. "1 h 13 min", i tocno vrijeme, npr. "03:28" ili "02.11. 17:44".
+function useAgo(ms,d){
+  var min=Math.max(0,Math.round((Date.now()-ms)/60000));
+  if(min<60)return min+' '+d.minSuffix;
+  if(min<1440){var m=min%60;return Math.floor(min/60)+' h'+(m?' '+m+' '+d.minSuffix:'')}
+  return Math.floor(min/1440)+' d';
+}
+function useClock(ms){
+  var dt=new Date(ms),n=new Date(),p=function(x){return(x<10?'0':'')+x};
+  var hm=p(dt.getHours())+':'+p(dt.getMinutes());
+  return dt.toDateString()===n.toDateString()?hm:p(dt.getDate())+'.'+p(dt.getMonth()+1)+'. '+hm;
+}
+function renderVisits(rows){
+  var d=t(),names=loadVNames();
+  if(!rows.length){useListEl.innerHTML='<div class="useempty">'+esc(d.useEmpty)+'</div>';return}
+  useListEl.innerHTML=rows.map(function(r,i){
+    var lastMs=Date.parse(r.last||'')||0,online=lastMs&&(Date.now()-lastMs)<7*60000;
+    var relTxt=lastMs?(online?d.useOnline:useAgo(lastMs,d)+' ('+useClock(lastMs)+')'):d.useNever;
+    var nm=names[r.id]||r.sbName||'';
+    var views=lastViews(r);
+    return '<div class="useitem"><div class="uhead">'
+      +'<input data-id="'+esc(r.id)+'" placeholder="'+esc(d.useName)+'" value="'+esc(nm)+'">'
+      +'<span class="ubadge'+(online?' on':'')+'">'+esc(online?d.useOnline:d.useLast+' '+relTxt)+'</span></div>'
+      +'<div class="umeta">'+(r.email?esc(r.email):'token …'+esc(r.tail||'????'))+(r.ver?'  ·  v'+esc(r.ver):'')+'  ·  '+esc(d.useViews.replace(/:$/,''))+'</div>'
+      +'<div class="uviews">'+(views.length?views.map(function(x){return '<span>'+esc(x)+'</span>'}).join(''):'<span>-</span>')+'</div></div>';
+  }).join('');
+  Array.prototype.forEach.call(useListEl.querySelectorAll('input[data-id]'),function(inp){
+    inp.addEventListener('change',function(){saveVName(inp.getAttribute('data-id'),String(inp.value||'').trim())});
+  });
+}
+function loadVisits(){
+  if(sbOn()){
+    Promise.all([sbJson('/rest/v1/koristenje?select=*'),sbJson('/rest/v1/uloge?select=user_id,ime,uloga').catch(function(){return []})]).then(function(res){
+      var ul={};(res[1]||[]).forEach(function(u){ul[u.user_id]=u});
+      var rows=(res[0]||[]).map(function(k){
+        var u=ul[k.user_id]||{};
+        return {id:k.user_id,sbName:u.ime||String(k.email||'').split('@')[0],email:k.email||'',last:k.zadnji,views:Array.isArray(k.sesije)?k.sesije:[],ver:k.ver,page:k.stranica};
+      }).sort(function(a,b){return (Date.parse(b.last||'')||0)-(Date.parse(a.last||'')||0)});
+      setUseState('');renderVisits(rows);
+    }).catch(function(){setUseState(t().useLoadFail,'bad')});
+    return;
+  }
+  if(!token()||!slug(cfg.repo)){useListEl.innerHTML='';return}
+  ghGet('cache').then(function(r){
+    if(r.status===404)return [];
+    if(!r.ok)throw new Error(t().errHttp(r.status));
+    return r.json();
+  }).then(function(arr){
+    if(!Array.isArray(arr))arr=[];
+    var files=arr.filter(function(x){return x&&x.type==='file'&&/\.json$/i.test(x.name||'')});
+    return Promise.all(files.map(function(f){
+      return ghGet(f.path,'application/vnd.github.raw').then(function(r){return r.ok?r.text():''}).then(function(txt){
+        try{return JSON.parse(txt)}catch(e){return null}
+      }).catch(function(){return null});
+    }));
+  }).then(function(recs){
+    var rows=(recs||[]).filter(function(x){return x&&x.id}).sort(function(a,b){return (Date.parse(b.last||'')||0)-(Date.parse(a.last||'')||0)});
+    setUseState('');
+    renderVisits(rows);
+  }).catch(function(e){setUseState(t().useLoadFail,'bad');});
+}
+function setUseState(txt,cls){useStateEl.textContent=txt||'';useStateEl.className='anastate'+(cls?' '+cls:'')}
+// --- Korisnici: samo za admina; racune pravi funkcija korisnici na Supabaseu (tajni kljuc je tamo, ne ovdje).
+var usrStateEl=document.getElementById('usrState'),usrListEl=document.getElementById('usrList'),usrNewEl=document.getElementById('usrNew');
+var usrRows=[];
+function setUsrState(txt,cls){usrStateEl.textContent=txt||'';usrStateEl.className='anastate'+(cls?' '+cls:'')}
+function usrCall(body){
+  return sbFetch('/functions/v1/korisnici',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(function(r){
+    if(r.status===404)throw new Error(t().usrFnMissing);
+    return r.json().catch(function(){return {}}).then(function(j){if(!r.ok)throw new Error(j.greska||j.message||j.msg||t().errHttp(r.status));return j});
+  });
+}
+function usrShowNew(html){usrNewEl.innerHTML=html||'';usrNewEl.hidden=!html}
+function renderUsers(){
+  var d=t();
+  usrListEl.innerHTML=usrRows.map(function(u,i){
+    var seen=Date.parse(u.zadnji||'')||0,sig=Date.parse(u.prijava||'')||0;
+    var meta=[u.ime&&u.ime!==String(u.email||'').split('@')[0]?esc(u.ime):'',
+      seen?d.usrLastSeen+' '+useClock(seen):d.usrNever,
+      sig?d.usrSignIn+' '+useClock(sig):''].filter(Boolean).join('  ·  ');
+    var roles=['korisnik','admin','pc'].map(function(r){return '<option value="'+r+'"'+(u.uloga===r?' selected':'')+'>'+r+'</option>'}).join('');
+    return '<div class="usritem'+(u.uloga?'':' norole')+'"><div class="uhead"><span class="uem">'+esc(u.email||'')+(u.ja?' ('+esc(d.usrMe)+')':'')+'</span>'
+      +'<select data-role="'+i+'">'+(u.uloga?'':'<option value="" selected>'+esc(d.usrNoRole)+'</option>')+roles+'</select></div>'
+      +'<div class="umeta">'+meta+'</div>'
+      +(u.ja?'':'<div class="uact"><button data-pwd="'+i+'">'+esc(d.usrPwd)+'</button><button data-del="'+i+'">'+esc(d.usrDel)+'</button></div>')
+      +'</div>';
+  }).join('');
+  Array.prototype.forEach.call(usrListEl.querySelectorAll('select[data-role]'),function(sel){
+    sel.addEventListener('change',function(){
+      var u=usrRows[Number(sel.getAttribute('data-role'))];if(!u||!sel.value)return;
+      setUsrState(t().usrWorking,'work');
+      usrCall({akcija:'uloga',user_id:u.id,uloga:sel.value}).then(function(){setUsrState(t().usrSaved,'ok');loadUsers()})
+        .catch(function(e){setUsrState(t().usrFail(e&&e.message||e),'bad');loadUsers()});
+    });
+  });
+  Array.prototype.forEach.call(usrListEl.querySelectorAll('button[data-pwd]'),function(b){
+    b.addEventListener('click',function(){
+      var u=usrRows[Number(b.getAttribute('data-pwd'))];if(!u||!confirm(t().usrPwdAsk(u.email)))return;
+      setUsrState(t().usrWorking,'work');
+      usrCall({akcija:'lozinka',user_id:u.id}).then(function(j){setUsrState('');usrShowNew(t().usrPwdNew(esc(u.email),esc(j.lozinka)))})
+        .catch(function(e){setUsrState(t().usrFail(e&&e.message||e),'bad')});
+    });
+  });
+  Array.prototype.forEach.call(usrListEl.querySelectorAll('button[data-del]'),function(b){
+    b.addEventListener('click',function(){
+      var u=usrRows[Number(b.getAttribute('data-del'))];if(!u||!confirm(t().usrDelAsk(u.email)))return;
+      setUsrState(t().usrWorking,'work');
+      usrCall({akcija:'obrisi',user_id:u.id}).then(function(){setUsrState(t().usrSaved,'ok');loadUsers()})
+        .catch(function(e){setUsrState(t().usrFail(e&&e.message||e),'bad')});
+    });
+  });
+}
+function loadUsers(){
+  if(!sbOn()||sbRole!=='admin')return;
+  usrCall({akcija:'popis'}).then(function(j){usrRows=j.korisnici||[];setUsrState('');renderUsers()})
+    .catch(function(e){setUsrState(t().usrFail(e&&e.message||e),'bad')});
+}
+function addUser(){
+  var nm=String(document.getElementById('usrName').value||'').trim();if(!nm)return;
+  var btn=document.getElementById('usrAdd');btn.disabled=true;usrShowNew('');setUsrState(t().usrWorking,'work');
+  usrCall({akcija:'novi',email:nm,uloga:document.getElementById('usrRole').value}).then(function(j){
+    btn.disabled=false;setUsrState('');document.getElementById('usrName').value='';
+    usrShowNew(t().usrCreated(esc(j.email),esc(j.lozinka)));loadUsers();
+  }).catch(function(e){btn.disabled=false;setUsrState(t().usrFail(e&&e.message||e),'bad')});
+}
+document.getElementById('usrAdd').addEventListener('click',addUser);
+document.getElementById('usrName').addEventListener('keydown',function(e){if(e.key==='Enter')addUser()});
+document.getElementById('sbLogin').addEventListener('click',sbLogin);
+document.getElementById('cfgPass').addEventListener('keydown',function(e){if(e.key==='Enter')sbLogin()});
+document.getElementById('sbLogout').addEventListener('click',sbLogout);
+anaBtn.addEventListener('click',sendRequest);
+document.addEventListener('visibilitychange',function(){if(!document.hidden){load();pollAnswer();loadAnaList();loadVisits()}});
+// --- Android aplikacija ---
+// Ljuska (APK) daje window.AndroidApp. Tada su Analiza i Koristenje u postavkama (zupcanik), a zvonce
+// u zaglavlju pali/gasi obavijesti. Provjeru stanja radi sama aplikacija u pozadini (i kad je zatvorena),
+// zato joj se ovdje predaju postavke repoa i token (ostaju na mobitelu).
+var APP=window.AndroidApp||null;
+var appBoxEl=document.getElementById('appBox'),bellEl=document.getElementById('bell');
+function appState(){try{return JSON.parse(APP.obavijestiStanje()||'{}')||{}}catch(e){return{}}}
+function appSync(){
+  if(!APP)return;
+  try{APP.postavke(JSON.stringify({repo:slug(cfg.repo),path:cfg.path||'stanje.json',branch:cfg.branch||'main',token:String(cfg.token||'').trim(),lang:lang}))}catch(e){}
+}
+function appRefresh(){
+  if(!APP)return;
+  var d=t(),st=appState(),on=!!st.ukljuceno;
+  bellEl.innerHTML=on?'&#128276;':'&#128277;';
+  bellEl.className='gear'+(on?' on':'');
+  bellEl.title=on?d.bellOn:d.bellOff;
+  document.getElementById('notifTitle').textContent=d.notifTitle;
+  var ns=document.getElementById('notifState');
+  ns.textContent=!String(cfg.token||'').trim()?d.notifNoToken:(on?d.notifOn:d.notifOffState);
+  ns.className='anastate'+(on?' ok':'');
+  document.getElementById('notifStopLbl').textContent=d.notifStop;
+  document.getElementById('notifOffLbl').textContent=d.notifOffline;
+  document.getElementById('notifStop').checked=on;
+  document.getElementById('notifOff').checked=st.offline!==false;
+  var perm=on&&st.dozvola===false,bat=on&&st.baterija===false;
+  document.getElementById('notifPerm').hidden=!perm;document.getElementById('notifPerm').textContent=d.notifPerm;
+  document.getElementById('notifPermBtn').hidden=!perm;document.getElementById('notifPermBtn').textContent=d.notifPermBtn;
+  document.getElementById('notifBat').hidden=!bat;document.getElementById('notifBat').textContent=d.notifBat;
+  document.getElementById('notifBatBtn').hidden=!bat;document.getElementById('notifBatBtn').textContent=d.notifBatBtn;
+  document.getElementById('notifTest').textContent=d.notifTest;
+  document.getElementById('appUpd').textContent=d.appUpd;
+  var v='';try{v=APP.verzija()}catch(e){}
+  document.getElementById('appVer').textContent=d.appVer(v)+(pageVer()?' · '+d.version+' '+pageVer():'');
+}
+function pageVer(){var m=document.querySelector('meta[name="flexcell-page-version"]');return m?String(m.getAttribute('content')||''):''}
+function appSetOn(on){
+  if(!APP)return;
+  if(on&&!String(cfg.token||'').trim()){openSetup();appBoxEl.hidden=false;appRefresh();return}
+  appSync();
+  try{APP.obavijesti(!!on)}catch(e){}
+  appRefresh();
+}
+// Ljuska javlja ishod (dozvola obavijesti / povratak u aplikaciju, nadogradnja).
+window.FX_OBAVIJESTI=function(){appRefresh()};
+window.FX_NADOGRADNJA=function(s){var m=t().appUpdState;document.getElementById('appVer').textContent=m[s]||s};
+if(APP){
+  document.body.classList.add('app');
+  bellEl.hidden=false;
+  appBoxEl.appendChild(document.getElementById('ana'));
+  appBoxEl.appendChild(document.getElementById('use'));
+  appBoxEl.appendChild(document.getElementById('usr'));
+  bellEl.addEventListener('click',function(){appSetOn(!appState().ukljuceno)});
+  document.getElementById('notifStop').addEventListener('change',function(e){appSetOn(e.target.checked)});
+  document.getElementById('notifOff').addEventListener('change',function(e){try{APP.obavijestiOffline(e.target.checked)}catch(x){}appRefresh()});
+  document.getElementById('notifPermBtn').addEventListener('click',function(){try{APP.dozvola()}catch(e){}});
+  document.getElementById('notifBatBtn').addEventListener('click',function(){try{APP.baterija()}catch(e){}});
+  document.getElementById('notifTest').addEventListener('click',function(){try{APP.proba()}catch(e){}});
+  document.getElementById('appUpd').addEventListener('click',function(){try{APP.nadogradi()}catch(e){}});
+  appSync();
+  appRefresh();
+}
+setInterval(load,30000);
+setInterval(updateAge,30000);
+setInterval(pollAnswer,POLL_MS);
+setInterval(tickPending,1000);
+setInterval(loadVisits,60000);
+applyStaticText();
+if(!sbOn()&&!token()&&!SRC)openSetup();
+if(sbOn())sbLoadRole().catch(function(){});
+load();
+tickPending();
+pollAnswer();
+loadAnaList();
+loadVisits();
+})();
+</script>
+</body>
+</html>
