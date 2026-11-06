@@ -56,7 +56,8 @@ h1{margin:0;font-size:17px;letter-spacing:.02em;flex:1}
 #tl .trow .k{flex:0 0 34px;font-weight:800;color:var(--dim)}
 #tl .trow .n{flex:1;min-width:0}
 #tl .trow .n small{display:block;color:var(--dim);font-size:11px}
-#tl .trow .v{white-space:nowrap;font-weight:700;font-variant-numeric:tabular-nums}
+#tl .trow .v{white-space:nowrap;font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+#tl .trow .v .th{display:block;margin-top:2px;font-size:12px;font-weight:700;color:#fbbf24}
 #tl .tlimg{margin:0 0 6px;border-radius:12px;border:1px solid var(--line);background:#fff;overflow:hidden;cursor:zoom-in;min-height:120px;display:flex;align-items:center;justify-content:center}
 #tl .tlimg img{display:block;width:100%;height:auto;max-height:62vh;object-fit:contain}
 #tl .tlimg span{color:#64748b;font-size:13px;padding:20px}
@@ -233,7 +234,7 @@ var I18N={
     imgHint:'klikni za sliku i alat',
     imgLoading:'ucitavam sliku...',
     imgFail:'slika nije dostupna',
-    toolHint:'alat za ovaj program',toolTitle:'Alati',toolUpper:'Gornji alat (OW)',toolLower:'Donji alat (UW)',toolList:'Alati s duzinom',toolCsv:'Werkzeuge iz CSV-a',toolNone:'nema podataka o alatu',toolPos:'pozicija',
+    toolHint:'alat za ovaj program',toolTitle:'Alati',toolUpper:'Gornji alat (OW)',toolLower:'Donji alat (UW)',toolList:'Alati s duzinom',toolCsv:'Werkzeuge iz CSV-a',toolNone:'nema podataka o alatu',toolPos:'pozicija',toolHeight:'visina',
     kvPieces:'komada',
     kvSecPerPart:'s/kom',
     kvEta:'zavrsetak',
@@ -328,7 +329,7 @@ var I18N={
     imgHint:'antippen für Bild und Werkzeug',
     imgLoading:'Bild wird geladen...',
     imgFail:'Bild nicht verfügbar',
-    toolHint:'Werkzeug für dieses Programm',toolTitle:'Werkzeuge',toolUpper:'Oberwerkzeug (OW)',toolLower:'Unterwerkzeug (UW)',toolList:'Werkzeuge mit Länge',toolCsv:'Werkzeuge aus der CSV',toolNone:'keine Werkzeugdaten',toolPos:'Position',
+    toolHint:'Werkzeug für dieses Programm',toolTitle:'Werkzeuge',toolUpper:'Oberwerkzeug (OW)',toolLower:'Unterwerkzeug (UW)',toolList:'Werkzeuge mit Länge',toolCsv:'Werkzeuge aus der CSV',toolNone:'keine Werkzeugdaten',toolPos:'Position',toolHeight:'Höhe',
     kvPieces:'Stück',
     kvSecPerPart:'s/Stk',
     kvEta:'Fertig',
@@ -563,11 +564,12 @@ function openImage(path){
 }
 // --- Alati (kljuc 🔧): raspored OW/UW na liniji 0-2500 mm (crvena crta = sredina), pa popis.
 var tlEl=document.getElementById('tl');
+function toolMmH(v){return (Math.round((Number(v)||0)*10)/10).toLocaleString(lang==='de'?'de-DE':'hr-HR',{maximumFractionDigits:1})+' mm'}
 function toolMm(v){return Math.round(Number(v)||0).toLocaleString(lang==='de'?'de-DE':'hr-HR')+' mm'}
 function toolLaneHtml(arr,cls,code){
   return '<div class="lane '+cls+'"><span class="lb">'+code+'</span><i class="cl" style="left:50%"></i>'+(arr||[]).map(function(x){
     var len=Number(x.len)||0,c=Number(x.c)||1250,l=Math.max(0,Math.min(100,(c-len/2)/2500*100)),w=Math.max(.4,Math.min(100-l,len/2500*100));
-    return '<i class="blk" style="left:'+l+'%;width:'+w+'%" title="'+esc(x.n)+'"></i>';
+    return '<i class="blk" style="left:'+l+'%;width:'+w+'%" title="'+esc(x.n)+(Number(x.h)>0?' · H '+toolMmH(x.h):'')+'"></i>';
   }).join('')+'</div>';
 }
 function toolRowsHtml(arr,code){
@@ -575,7 +577,7 @@ function toolRowsHtml(arr,code){
   return (arr||[]).map(function(x){
     var len=Number(x.len)||0,c=Number(x.c)||1250;
     return '<div class="trow"><span class="k">'+code+'</span><span class="n">'+esc(x.n||'-')+(x.o?'<small>'+esc(x.o)+'</small>':'')
-      +'<small>'+esc(d.toolPos)+' '+toolMm(c-len/2)+' - '+toolMm(c+len/2)+'</small></span><span class="v">'+toolMm(len)+'</span></div>';
+      +'<small>'+esc(d.toolPos)+' '+toolMm(c-len/2)+' - '+toolMm(c+len/2)+'</small></span><span class="v">'+toolMm(len)+(Number(x.h)>0?'<small class="th">'+esc(d.toolHeight)+' '+toolMmH(x.h)+'</small>':'')+'</span></div>';
   }).join('');
 }
 function openTools(machine){
