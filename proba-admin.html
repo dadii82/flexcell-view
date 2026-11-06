@@ -69,7 +69,8 @@ h1{margin:0;font-size:17px;letter-spacing:.02em;flex:1}
 #tl .tlprops .v{font-weight:700;text-align:right;min-width:0;overflow-wrap:anywhere}
 #tl .tlprops .v small{color:var(--dim);font-weight:400}
 #tl .tlprops .frno{color:#fb923c}#tl .tlprops .frok{color:#4ade80;font-weight:700}
-#tl .tlimg{margin:0 0 6px;border-radius:12px;border:1px solid var(--line);background:#fff;overflow:hidden;cursor:zoom-in;min-height:120px;display:flex;align-items:center;justify-content:center}
+#tl{cursor:pointer}
+#tl .tlimg{margin:0 0 6px;border-radius:12px;border:1px solid var(--line);background:#fff;overflow:hidden;min-height:120px;display:flex;align-items:center;justify-content:center}
 #tl .tlimg img{display:block;width:100%;height:auto;max-height:62vh;object-fit:contain}
 #tl .tlimg span{color:#64748b;font-size:13px;padding:20px}
 #tl .ticons{position:relative;margin:4px 0 -2px}
@@ -137,7 +138,7 @@ footer{display:flex;align-items:center;gap:10px;margin-top:14px}
 #srcBadge.ok i{background:var(--ok)}#srcBadge.bad i{background:var(--bad)}
 #err{color:var(--bad);font-size:13px;margin:6px 4px}
 #setup label{display:block;font-size:12px;color:var(--dim);margin:9px 0 3px}
-#setup input{width:100%;padding:10px;border-radius:9px;border:1px solid var(--line);background:#0b1220;color:var(--txt);font:15px inherit}
+#setup input,#setup select{width:100%;padding:10px;border-radius:9px;border:1px solid var(--line);background:#0b1220;color:var(--txt);font:15px inherit}
 #setup .row{display:flex;gap:8px;margin-top:13px}
 #setup .hint{font-size:12px;color:var(--dim);margin-top:11px;line-height:1.45}
 #setup .hint code{color:#cbd5e1}
@@ -172,6 +173,7 @@ body.app #age{flex:1;min-width:0;white-space:normal;text-align:right;line-height
   <div class="row"><button id="sbLogin" class="pri">Prijava</button><button id="sbLogout" hidden>Odjava</button></div>
   <div id="sbInfo" class="hint"></div>
   <label id="lblToken" style="margin-top:14px">Token s pravom pisanja</label><input id="cfgToken" type="password" placeholder="github_pat_..." autocapitalize="off" autocorrect="off" spellcheck="false">
+  <label id="lblView" style="margin-top:14px">Prikaz programa</label><select id="cfgView"><option value="detalji" id="optViewDet">Detalji (slika + svojstva)</option><option value="slika" id="optViewImg">Velika slika</option></select>
   <div class="row"><button id="cfgSave">Spremi</button></div>
   <div id="setupHint" class="hint" hidden>Ova stranica salje zahtjev racunalu, pa token treba pravo <code>Contents: Read and write</code> na <b>privatni</b> repo s podacima. Token ostaje spremljen samo na ovom mobitelu.</div>
 </div>
@@ -251,7 +253,7 @@ var I18N={
     imgHint:'klikni za sliku i alat',
     imgLoading:'ucitavam sliku...',
     imgFail:'slika nije dostupna',
-    toolHint:'alat za ovaj program',toolTitle:'Alati',toolUpper:'Gornji alat (OW)',toolLower:'Donji alat (UW)',toolList:'Alati s duzinom',toolCsv:'Werkzeuge iz CSV-a',toolNone:'nema podataka o alatu',toolPos:'pozicija',toolHeight:'visina',toolSection:'Presjek alata (mjerilo)',toolFlip:'okrenut 180°',prCnc:'CNC program',prFr:'Freigabe',prFrNo:'NIJE freigegeben',prKu:'Kupac',prNa:'Naziv',prAn:'Artikel-Nr',prMat:'Materijal',prDeb:'Debljina',prKmh:'Kom/h',prSetup:'Podešavanje',prProg:'Programiranje',prKol:'Kolica (max)',prFill:'Jedno punjenje',
+    toolHint:'alat za ovaj program',toolTitle:'Alati',toolUpper:'Gornji alat (OW)',toolLower:'Donji alat (UW)',toolList:'Alati s duzinom',toolCsv:'Werkzeuge iz CSV-a',toolNone:'nema podataka o alatu',toolPos:'pozicija',toolHeight:'visina',toolSection:'Presjek alata (mjerilo)',toolFlip:'okrenut 180°',lblView:'Prikaz programa (dodir na karticu)',optViewDet:'Detalji (slika + svojstva)',optViewImg:'Velika slika',prCnc:'CNC program',prFr:'Freigabe',prFrNo:'NIJE freigegeben',prKu:'Kupac',prNa:'Naziv',prAn:'Artikel-Nr',prMat:'Materijal',prDeb:'Debljina',prKmh:'Kom/h',prSetup:'Podešavanje',prProg:'Programiranje',prKol:'Kolica (max)',prFill:'Jedno punjenje',
     kvPieces:'komada',
     kvSecPerPart:'s/kom',
     kvEta:'zavrsetak',
@@ -346,7 +348,7 @@ var I18N={
     imgHint:'antippen für Bild und Werkzeug',
     imgLoading:'Bild wird geladen...',
     imgFail:'Bild nicht verfügbar',
-    toolHint:'Werkzeug für dieses Programm',toolTitle:'Werkzeuge',toolUpper:'Oberwerkzeug (OW)',toolLower:'Unterwerkzeug (UW)',toolList:'Werkzeuge mit Länge',toolCsv:'Werkzeuge aus der CSV',toolNone:'keine Werkzeugdaten',toolPos:'Position',toolHeight:'Höhe',toolSection:'Werkzeugschnitt (maßstäblich)',toolFlip:'gedreht 180°',prCnc:'CNC-Programm',prFr:'Freigabe',prFrNo:'NICHT freigegeben',prKu:'Kunde',prNa:'Bezeichnung',prAn:'Artikel-Nr',prMat:'Material',prDeb:'Stärke',prKmh:'Stk./h',prSetup:'Rüsten',prProg:'Programmierung',prKol:'Wagen (max)',prFill:'Eine Befüllung',
+    toolHint:'Werkzeug für dieses Programm',toolTitle:'Werkzeuge',toolUpper:'Oberwerkzeug (OW)',toolLower:'Unterwerkzeug (UW)',toolList:'Werkzeuge mit Länge',toolCsv:'Werkzeuge aus der CSV',toolNone:'keine Werkzeugdaten',toolPos:'Position',toolHeight:'Höhe',toolSection:'Werkzeugschnitt (maßstäblich)',toolFlip:'gedreht 180°',lblView:'Programmansicht (Karte antippen)',optViewDet:'Details (Bild + Eigenschaften)',optViewImg:'Großes Bild',prCnc:'CNC-Programm',prFr:'Freigabe',prFrNo:'NICHT freigegeben',prKu:'Kunde',prNa:'Bezeichnung',prAn:'Artikel-Nr',prMat:'Material',prDeb:'Stärke',prKmh:'Stk./h',prSetup:'Rüsten',prProg:'Programmierung',prKol:'Wagen (max)',prFill:'Eine Befüllung',
     kvPieces:'Stück',
     kvSecPerPart:'s/Stk',
     kvEta:'Fertig',
@@ -478,6 +480,7 @@ function applyStaticText(){
   document.getElementById('usrAdd').textContent=d.usrAdd;
   sbShowInfo();
   document.getElementById('cfgSave').textContent=d.btnSave;
+  document.getElementById('lblView').textContent=d.lblView;document.getElementById('optViewDet').textContent=d.optViewDet;document.getElementById('optViewImg').textContent=d.optViewImg;
   document.getElementById('setupHint').innerHTML=d.setupHint;
   document.getElementById('reload').textContent=d.btnReload;
   document.getElementById('langBtn').textContent=d.langBtn;
@@ -657,8 +660,9 @@ function openTools(machine){
   if(!m||!(m.tools||m.img||m.props))return;
   var d=t(),tl=m.tools||{},h='';
   var imgPath=m.img||'',seq=++tlSeq;
-  var ph=propsHtml(m);
-  if(imgPath||ph)h+='<div class="tltop">'+(imgPath?'<div class="tlimg" id="tlImgBox"><span>'+esc(d.imgLoading)+'</span></div>':'')+ph+'</div>';
+  var big=loadView()==='slika',ph=big?'':propsHtml(m);
+  if(big&&imgPath)h+='<div class="tlimg" id="tlImgBox"><span>'+esc(d.imgLoading)+'</span></div>';
+  else if(imgPath||ph)h+='<div class="tltop">'+(imgPath?'<div class="tlimg" id="tlImgBox"><span>'+esc(d.imgLoading)+'</span></div>':'')+ph+'</div>';
   if((tl.ow&&tl.ow.length)||(tl.uw&&tl.uw.length)){
     var mh=toolMaxH(tl),ik=toolIconScale(tl);
     // OW: detalji gore, pa profil i traka (alat visi s grede); UW: traka, profil, pa detalji dolje.
@@ -678,7 +682,6 @@ function openTools(machine){
   tlEl.hidden=false;tlEl.scrollTop=0;
   if(imgPath){
     var box=document.getElementById('tlImgBox');
-    box.addEventListener('click',function(){openImage(imgPath)});
     fetchImage(imgPath).then(function(u){
       if(seq!==tlSeq||tlEl.hidden)return;
       box.innerHTML=u?'<img alt="" src="'+u+'">':'<span>'+esc(d.imgFail)+'</span>';
@@ -686,9 +689,13 @@ function openTools(machine){
   }
 }
 var tlSeq=0;
+var VIEW_KEY='flexcell-prikaz-programa';
+function loadView(){try{return localStorage.getItem(VIEW_KEY)==='slika'?'slika':'detalji'}catch(e){return 'detalji'}}
+(function(){var sel=document.getElementById('cfgView');if(!sel)return;sel.value=loadView();sel.addEventListener('change',function(){try{localStorage.setItem(VIEW_KEY,sel.value)}catch(e){}})})();
 function closeTools(){tlSeq++;tlEl.hidden=true}
 document.getElementById('tlClose').addEventListener('click',closeTools);
-tlEl.addEventListener('click',function(e){if(e.target===tlEl)closeTools()});
+// Dodir bilo gdje u prozoru (slika, alati, prazno) vraca na pregled.
+tlEl.addEventListener('click',function(){closeTools()});
 document.addEventListener('keydown',function(e){if(!tlEl.hidden&&lb.hidden&&(e.key==='Escape'||e.key==='Esc'))closeTools()});
 function bindCardImages(){
   Array.prototype.forEach.call(cards.querySelectorAll('.tooltag[data-tools]'),function(el){
