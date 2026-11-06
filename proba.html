@@ -57,14 +57,16 @@ h1{margin:0;font-size:17px;letter-spacing:.02em;flex:1}
 #tl .trow .n{flex:1;min-width:0}
 #tl .trow .n small{display:block;color:var(--dim);font-size:11px}
 #tl .trow .v{white-space:nowrap;font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+#tl .trow .n .tf{color:#fbbf24;font-weight:700}
 #tl .trow .v .th{display:block;margin-top:2px;font-size:12px;font-weight:700;color:#fbbf24}
 #tl .tlimg{margin:0 0 6px;border-radius:12px;border:1px solid var(--line);background:#fff;overflow:hidden;cursor:zoom-in;min-height:120px;display:flex;align-items:center;justify-content:center}
 #tl .tlimg img{display:block;width:100%;height:auto;max-height:62vh;object-fit:contain}
 #tl .tlimg span{color:#64748b;font-size:13px;padding:20px}
-#tl .tsec{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
-#tl .tsec figure{margin:0;padding:8px;border:1px solid var(--line);border-radius:10px;background:#0f172a;display:flex;flex-direction:column;align-items:center;gap:6px;flex:1 1 150px}
-#tl .tsec figcaption{font-size:11px;color:var(--dim);text-align:center;line-height:1.35}
-#tl .tsec figcaption b.o{color:#93c5fd}#tl .tsec figcaption b.u{color:#86efac}
+#tl .ticons{position:relative;margin:4px 0 -2px}
+#tl .ticons .ti{position:absolute;bottom:0;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center}
+#tl .ticons.ow .ti{bottom:auto;top:0}
+#tl .ticons .ti svg{display:block;overflow:visible}
+#tl .ticons .ti i{position:absolute;top:-4px;right:-10px;font-style:normal;font-size:12px;font-weight:900;color:#fbbf24}
 #tl .tnone{color:var(--dim);font-size:13px;padding:6px 0}
 #lb{position:fixed;inset:0;z-index:62;display:flex;align-items:center;justify-content:center;padding:10px;background:rgba(2,6,23,.94);cursor:zoom-out}
 #lb[hidden]{display:none}
@@ -141,7 +143,7 @@ var I18N={
     imgHint:'klikni za sliku i alat',
     imgLoading:'ucitavam sliku...',
     imgFail:'slika nije dostupna',
-    toolHint:'alat za ovaj program',toolTitle:'Alati',toolUpper:'Gornji alat (OW)',toolLower:'Donji alat (UW)',toolList:'Alati s duzinom',toolCsv:'Werkzeuge iz CSV-a',toolNone:'nema podataka o alatu',toolPos:'pozicija',toolHeight:'visina',toolSection:'Presjek alata (mjerilo)',
+    toolHint:'alat za ovaj program',toolTitle:'Alati',toolUpper:'Gornji alat (OW)',toolLower:'Donji alat (UW)',toolList:'Alati s duzinom',toolCsv:'Werkzeuge iz CSV-a',toolNone:'nema podataka o alatu',toolPos:'pozicija',toolHeight:'visina',toolSection:'Presjek alata (mjerilo)',toolFlip:'okrenut 180°',
     kvPieces:'komada',
     kvSecPerPart:'s/kom',
     kvEta:'zavrsetak',
@@ -186,7 +188,7 @@ var I18N={
     imgHint:'antippen für Bild und Werkzeug',
     imgLoading:'Bild wird geladen...',
     imgFail:'Bild nicht verfügbar',
-    toolHint:'Werkzeug für dieses Programm',toolTitle:'Werkzeuge',toolUpper:'Oberwerkzeug (OW)',toolLower:'Unterwerkzeug (UW)',toolList:'Werkzeuge mit Länge',toolCsv:'Werkzeuge aus der CSV',toolNone:'keine Werkzeugdaten',toolPos:'Position',toolHeight:'Höhe',toolSection:'Werkzeugschnitt (maßstäblich)',
+    toolHint:'Werkzeug für dieses Programm',toolTitle:'Werkzeuge',toolUpper:'Oberwerkzeug (OW)',toolLower:'Unterwerkzeug (UW)',toolList:'Werkzeuge mit Länge',toolCsv:'Werkzeuge aus der CSV',toolNone:'keine Werkzeugdaten',toolPos:'Position',toolHeight:'Höhe',toolSection:'Werkzeugschnitt (maßstäblich)',toolFlip:'gedreht 180°',
     kvPieces:'Stück',
     kvSecPerPart:'s/Stk',
     kvEta:'Fertig',
@@ -507,8 +509,7 @@ function toolLaneHtml(arr,cls,code,scaleH){
   g+='<rect x="1249" y="0" width="2" height="'+H+'" fill="#ef4444" opacity=".75"/>';
   return '<div class="lane '+cls+'"><span class="lb">'+code+'</span><svg viewBox="0 0 2500 '+H+'" preserveAspectRatio="none" style="display:block;width:100%;height:auto;aspect-ratio:2500/'+H+'">'+g+'</svg></div>';
 }
-// --- Presjek: profil alata iz .btd (mm, y gore negativno). OW se okrene vrhom dolje i stoji iznad matrice,
-// razmak 30 mm (shematski). Par = gornji alat + donji alat koji se najvise preklapaju po duljini.
+// Profil alata iz .btd (mm, y gore negativno): okvir putanje (M/L tocke + krajevi lukova).
 function profBox(d){
   var t=String(d||'').match(/[MLAZmlaz]|-?\d*\.?\d+(?:e-?\d+)?/g)||[],cmd='',i=0,xs=[],ys=[];
   while(i<t.length){
@@ -519,30 +520,24 @@ function profBox(d){
   if(!xs.length)return null;
   return {x0:Math.min.apply(null,xs),x1:Math.max.apply(null,xs),y0:Math.min.apply(null,ys),y1:Math.max.apply(null,ys)};
 }
-function toolPairs(tl){
-  var pf=tl.pf||[],ow=(tl.ow||[]).filter(function(x){return x.p!=null&&pf[x.p]}),uw=(tl.uw||[]).filter(function(x){return x.p!=null&&pf[x.p]});
-  var ov=function(a,b){var a0=(+a.c)-(+a.len)/2,a1=(+a.c)+(+a.len)/2,b0=(+b.c)-(+b.len)/2,b1=(+b.c)+(+b.len)/2;return Math.min(a1,b1)-Math.max(a0,b0)};
-  var seen={},out=[],usedU={};
-  ow.forEach(function(o){var best=null,bv=0;uw.forEach(function(u){var v=ov(o,u);if(v>bv){bv=v;best=u}});
-    if(best)usedU[best.p]=1;var k=o.p+'|'+(best?best.p:'');if(!seen[k]){seen[k]=1;out.push({o:o,u:best})}});
-  uw.forEach(function(u){if(!usedU[u.p]&&!seen['|'+u.p]){seen['|'+u.p]=1;out.push({o:null,u:u})}});
-  return out.slice(0,4);
-}
-function toolSectionHtml(tl){
-  var pf=tl.pf||[],pairs=toolPairs(tl);if(!pairs.length)return '';
-  var GAP=30,PAD=12,items=pairs.map(function(pr){
-    var bo=pr.o?profBox(pf[pr.o.p]):null,bu=pr.u?profBox(pf[pr.u.p]):null,g='',y=PAD,half=10;
-    if(bo){var yo=PAD+bo.y1;g+='<path d="'+pf[pr.o.p]+'" transform="translate(0 '+yo+') scale(1 -1)" fill="#3b82f6" stroke="#93c5fd" stroke-width="1.2" vector-effect="non-scaling-stroke"/>';y=yo-bo.y0;half=Math.max(half,-bo.x0,bo.x1)}
-    if(bu){var yu=(bo?y+GAP:PAD)-bu.y0;g+='<path d="'+pf[pr.u.p]+'" transform="translate(0 '+yu+')" fill="#16a34a" stroke="#86efac" stroke-width="1.2" vector-effect="non-scaling-stroke"/>';y=yu+bu.y1;half=Math.max(half,-bu.x0,bu.x1)}
-    return {g:g,H:y+PAD,W:2*(half+PAD),pr:pr};
-  });
-  var maxH=Math.max.apply(null,items.map(function(it){return it.H})),k=Math.min(1.2,300/maxH),d=t();
-  return '<div class="tlsec">'+esc(d.toolSection)+'</div><div class="tsec">'+items.map(function(it){
-    var o=it.pr.o,u=it.pr.u,W=it.W,H=it.H;
-    return '<figure><svg viewBox="'+(-W/2)+' 0 '+W+' '+H+'" style="width:'+Math.round(W*k)+'px;height:'+Math.round(H*k)+'px">'
-      +'<line x1="0" y1="0" x2="0" y2="'+H+'" stroke="#ef4444" stroke-width="1" stroke-dasharray="4 3" vector-effect="non-scaling-stroke" opacity=".7"/>'+it.g+'</svg>'
-      +'<figcaption>'+(o?'<b class="o">OW</b> '+esc(o.n)+(Number(o.h)>0?' · H '+toolMmH(o.h):'')+'<br>':'')+(u?'<b class="u">UW</b> '+esc(u.n)+(Number(u.h)>0?' · H '+toolMmH(u.h):''):'')+'</figcaption></figure>';
-  }).join('')+'</div>';
+// Male slike profila iznad trake: susjedni isti alat (isti profil i okret) = jedna slika na sredini skupine.
+// Sve slike u istom mjerilu (najvisi profil = 46 px); OW vrhom dolje, okrenut alat zrcaljen + oznaka.
+var TOOL_ICON_PX=46;
+function toolIconScale(tl){var m=0,pf=tl.pf||[];[tl.ow,tl.uw].forEach(function(a){(a||[]).forEach(function(x){var b=x.p!=null&&pf[x.p]?profBox(pf[x.p]):null;if(b)m=Math.max(m,b.y1-b.y0)})});return m>0?TOOL_ICON_PX/m:0}
+function toolIconsHtml(arr,pf,up,k){
+  pf=pf||[];if(!k)return '';
+  var list=(arr||[]).filter(function(x){return x.p!=null&&pf[x.p]}).map(function(x){var len=+x.len||0,c=+x.c||1250;return {x:x,a:c-len/2,b:c+len/2}}).sort(function(m,n){return m.a-n.a});
+  var groups=[];list.forEach(function(it){var g=groups[groups.length-1];if(g&&g.p===it.x.p&&!!g.f===!!it.x.f&&it.a-g.b<5){g.b=Math.max(g.b,it.b)}else groups.push({p:it.x.p,f:!!it.x.f,a:it.a,b:it.b,n:it.x.n})});
+  if(!groups.length)return '';
+  var rows=[],html=groups.map(function(g){
+    var bx=profBox(pf[g.p]);if(!bx)return '';
+    var w=Math.max(4,(bx.x1-bx.x0)*k),h=(bx.y1-bx.y0)*k,cx=(g.a+g.b)/2/2500*100;
+    var sx=g.f?-1:1,sy=up?-1:1,tr='scale('+sx+' '+sy+')';
+    var vb=(sx<0?-bx.x1:bx.x0)+' '+(sy<0?-bx.y1:bx.y0)+' '+(bx.x1-bx.x0)+' '+(bx.y1-bx.y0);
+    var col=up?['#3b82f6','#93c5fd']:['#16a34a','#86efac'];
+    return '<span class="ti'+(g.f?' fl':'')+'" style="left:'+cx.toFixed(2)+'%" title="'+esc(g.n)+(g.f?' · '+esc(t().toolFlip):'')+'"><svg viewBox="'+vb+'" style="width:'+w.toFixed(1)+'px;height:'+h.toFixed(1)+'px"><path d="'+pf[g.p]+'" transform="'+tr+'" fill="'+col[0]+'" stroke="'+col[1]+'" stroke-width="1" vector-effect="non-scaling-stroke"/></svg>'+(g.f?'<i>&#8635;</i>':'')+'</span>';
+  }).join('');
+  return '<div class="ticons '+(up?'ow':'uw')+'" style="height:'+(TOOL_ICON_PX+6)+'px">'+html+'</div>';
 }
 function toolMaxH(tl){var m=0;[tl.ow,tl.uw].forEach(function(a){(a||[]).forEach(function(x){var h=Number(x.h)>0?Number(x.h):100;if(h>m)m=h})});return m}
 function toolRowsHtml(arr,code){
@@ -550,7 +545,7 @@ function toolRowsHtml(arr,code){
   return (arr||[]).map(function(x){
     var len=Number(x.len)||0,c=Number(x.c)||1250;
     return '<div class="trow"><span class="k">'+code+'</span><span class="n">'+esc(x.n||'-')+(x.o?'<small>'+esc(x.o)+'</small>':'')
-      +'<small>'+esc(d.toolPos)+' '+toolMm(c-len/2)+' - '+toolMm(c+len/2)+'</small></span><span class="v">'+toolMm(len)+(Number(x.h)>0?'<small class="th">'+esc(d.toolHeight)+' '+toolMmH(x.h)+'</small>':'')+'</span></div>';
+      +'<small>'+esc(d.toolPos)+' '+toolMm(c-len/2)+' - '+toolMm(c+len/2)+'</small>'+(x.f?'<small class="tf">&#8635; '+esc(d.toolFlip)+'</small>':'')+'</span><span class="v">'+toolMm(len)+(Number(x.h)>0?'<small class="th">'+esc(d.toolHeight)+' '+toolMmH(x.h)+'</small>':'')+'</span></div>';
   }).join('');
 }
 function openTools(machine){
@@ -560,10 +555,9 @@ function openTools(machine){
   var imgPath=m.img||'',seq=++tlSeq;
   if(imgPath)h+='<div class="tlimg" id="tlImgBox"><span>'+esc(d.imgLoading)+'</span></div>';
   if((tl.ow&&tl.ow.length)||(tl.uw&&tl.uw.length)){
-    var mh=toolMaxH(tl);
-    h+=toolSectionHtml(tl);
-    h+='<div class="tlsec">'+esc(d.toolUpper)+'</div>'+toolLaneHtml(tl.ow,'ow','OW',mh)+toolRowsHtml(tl.ow,'OW');
-    h+='<div class="tlsec">'+esc(d.toolLower)+'</div>'+toolLaneHtml(tl.uw,'uw','UW',mh)+toolRowsHtml(tl.uw,'UW');
+    var mh=toolMaxH(tl),ik=toolIconScale(tl);
+    h+='<div class="tlsec">'+esc(d.toolUpper)+'</div>'+toolIconsHtml(tl.ow,tl.pf,true,ik)+toolLaneHtml(tl.ow,'ow','OW',mh)+toolRowsHtml(tl.ow,'OW');
+    h+='<div class="tlsec">'+esc(d.toolLower)+'</div>'+toolIconsHtml(tl.uw,tl.pf,false,ik)+toolLaneHtml(tl.uw,'uw','UW',mh)+toolRowsHtml(tl.uw,'UW');
   }
   if(tl.items&&tl.items.length&&!((tl.ow&&tl.ow.length)||(tl.uw&&tl.uw.length))){
     h+='<div class="tlsec">'+esc(d.toolList)+'</div>'+tl.items.map(function(x){
