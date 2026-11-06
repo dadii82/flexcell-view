@@ -598,14 +598,14 @@ function profBox(d){
   if(!xs.length)return null;
   return {x0:Math.min.apply(null,xs),x1:Math.max.apply(null,xs),y0:Math.min.apply(null,ys),y1:Math.max.apply(null,ys)};
 }
-// Male slike profila iznad trake: susjedni isti alat (isti profil i okret) = jedna slika na sredini skupine.
+// Male slike profila iznad trake: susjedni isti alat (isti profil i okret, razmak <80 mm ~ sirina slicice) = jedna slika na sredini skupine.
 // Sve slike u istom mjerilu (najvisi profil = 46 px); OW vrhom dolje, okrenut alat zrcaljen + oznaka.
 var TOOL_ICON_PX=46;
 function toolIconScale(tl){var m=0,pf=tl.pf||[];[tl.ow,tl.uw].forEach(function(a){(a||[]).forEach(function(x){var b=x.p!=null&&pf[x.p]?profBox(pf[x.p]):null;if(b)m=Math.max(m,b.y1-b.y0)})});return m>0?TOOL_ICON_PX/m:0}
 function toolIconsHtml(arr,pf,up,k){
   pf=pf||[];if(!k)return '';
   var list=(arr||[]).filter(function(x){return x.p!=null&&pf[x.p]}).map(function(x){var len=+x.len||0,c=+x.c||1250;return {x:x,a:c-len/2,b:c+len/2}}).sort(function(m,n){return m.a-n.a});
-  var groups=[];list.forEach(function(it){var g=groups[groups.length-1];if(g&&g.p===it.x.p&&!!g.f===!!it.x.f&&it.a-g.b<5){g.b=Math.max(g.b,it.b)}else groups.push({p:it.x.p,f:!!it.x.f,a:it.a,b:it.b,n:it.x.n})});
+  var groups=[];list.forEach(function(it){var g=groups[groups.length-1];if(g&&g.p===it.x.p&&!!g.f===!!it.x.f&&it.a-g.b<80){g.b=Math.max(g.b,it.b)}else groups.push({p:it.x.p,f:!!it.x.f,a:it.a,b:it.b,n:it.x.n})});
   if(!groups.length)return '';
   var rows=[],html=groups.map(function(g){
     var bx=profBox(pf[g.p]);if(!bx)return '';
