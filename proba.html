@@ -104,7 +104,7 @@ var I18N={
     lblToken:'GitHub token (staro, rezerva)',
     lblEmail:'E-mail',lblPass:'Lozinka',btnLogin:'Prijava',btnLogout:'Odjava',
     sbLoggedIn:function(e){return 'Prijavljen: '+e+' (Supabase)'},sbLoggedOut:'Prijavi se e-mailom i lozinkom koju si dobio.',
-    sbBadLogin:'Pogresan e-mail ili lozinka',sbNoRole:'prijava uspjela, ali racun jos nema pristup - javi se adminu',sbExpired:'prijava je istekla - prijavi se ponovno',
+    sbBadLogin:'Pogresan e-mail ili lozinka',sbNoData:function(u){return 'racun ima pristup ('+u+'), ali u Supabaseu jos nema stanja - racunalo u pogonu ne salje u Supabase (Opcije: kvacica Supabase)'},sbNoRole:'prijava uspjela, ali racun jos nema pristup - javi se adminu',sbExpired:'prijava je istekla - prijavi se ponovno',
     btnSave:'Spremi',
     btnClose:'Zatvori',
     setupHint:'Podaci su u <b>privatnom</b> repou, pa ih ova stranica cita preko GitHub API-ja i za to treba token. Na GitHubu: <code>Settings &rarr; Developer settings &rarr; Fine-grained tokens</code>, pristup samo tom repou, pravo <code>Contents: Read-only</code>. Token ostaje spremljen samo na ovom mobitelu.',
@@ -148,7 +148,7 @@ var I18N={
     lblToken:'GitHub-Token (alt, Reserve)',
     lblEmail:'E-Mail',lblPass:'Passwort',btnLogin:'Anmelden',btnLogout:'Abmelden',
     sbLoggedIn:function(e){return 'Angemeldet: '+e+' (Supabase)'},sbLoggedOut:'Mit der erhaltenen E-Mail und dem Passwort anmelden.',
-    sbBadLogin:'Falsche E-Mail oder falsches Passwort',sbNoRole:'Anmeldung ok, aber das Konto hat noch keinen Zugriff - Admin fragen',sbExpired:'Anmeldung abgelaufen - bitte neu anmelden',
+    sbBadLogin:'Falsche E-Mail oder falsches Passwort',sbNoData:function(u){return 'Konto hat Zugriff ('+u+'), aber in Supabase gibt es noch keinen Status - der PC in der Halle sendet nicht an Supabase (Optionen: Haken Supabase)'},sbNoRole:'Anmeldung ok, aber das Konto hat noch keinen Zugriff - Admin fragen',sbExpired:'Anmeldung abgelaufen - bitte neu anmelden',
     btnSave:'Speichern',
     btnClose:'Schließen',
     setupHint:'Die Daten liegen in einem <b>privaten</b> Repo, deshalb liest diese Seite sie über die GitHub-API - dafür wird ein Token benötigt. Auf GitHub: <code>Settings &rarr; Developer settings &rarr; Fine-grained tokens</code>, Zugriff nur auf dieses Repo, Recht <code>Contents: Read-only</code>. Der Token bleibt nur auf diesem Handy gespeichert.',
@@ -518,7 +518,8 @@ function loadSb(){
     if(!r.ok)throw new Error(dict.errHttp(r.status));
     return r.json();
   }).then(function(rows){
-    if(!rows||!rows.length)throw new Error(t().sbNoRole);
+    if(!rows||!rows.length)return sbFetch('/rest/v1/rpc/moja_uloga',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})
+      .then(function(r){return r.ok?r.json():null}).then(function(u){throw new Error(u?t().sbNoData(u):t().sbNoRole)});
     render(rows[0].podaci||{});
     setSrcBadge('','ok');
   }).catch(function(e){
