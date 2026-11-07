@@ -543,24 +543,53 @@ function render(d){
 // Slika se ne prikazuje na kartici: klik bilo gdje po kartici je otvori preko cijelog
 // ekrana, klik bilo gdje (ili Esc) je zatvori. Dohvaca se tek na klik i pamti u imgCache.
 var imgCache={};
-function fetchImage(path){
-  if(imgCache[path])return Promise.resolve(imgCache[path]);
+// Slike se trajno pamte na uredaju (Cache Storage): pri ulasku se odmah pokaze spremljena, a nova verzija
+// se u pozadini provjeri najvise svakih 6 h (onUpdate zamijeni sliku ako je prozor jos otvoren).
+var IMG_STORE='flexcell-slike-v1',IMG_MAX_AGE=6*3600000;
+function imgStoreKey(path){return 'https://flexcell-slike.local/'+encodeURIComponent(String(path).split('?')[0])}
+function imgStoreGet(path){
+  try{if(!window.caches)return Promise.resolve(null)}catch(e){return Promise.resolve(null)}
+  return caches.open(IMG_STORE).then(function(c){return c.match(imgStoreKey(path))})
+    .then(function(r){return r?r.blob().then(function(b){return {b:b,t:Number(r.headers.get('x-saved'))||0}}):null})
+    .catch(function(){return null});
+}
+function imgStorePut(path,b){
+  try{if(!window.caches||!b)return}catch(e){return}
+  caches.open(IMG_STORE).then(function(c){return c.put(imgStoreKey(path),new Response(b,{headers:{'Content-Type':b.type||'image/png','x-saved':String(Date.now())}}))}).catch(function(){});
+}
+function imgStoreClear(){try{if(window.caches)caches.delete(IMG_STORE).catch(function(){})}catch(e){}}
+function fetchImageBlob(path){
   if(sbOn()){
     var name=String(path).replace(/^\/+/,'').replace(/^slike\//,'').split('?')[0];
     return sbFetch('/storage/v1/object/authenticated/slike/'+name.split('/').map(encodeURIComponent).join('/'))
-      .then(function(r){return r.ok?r.blob():null})
-      .then(function(b){if(!b)return '';var u=URL.createObjectURL(b);imgCache[path]=u;return u})
-      .catch(function(){return ''});
+      .then(function(r){return r.ok?r.blob():null}).catch(function(){return null});
   }
   var repo=slug(cfg.repo),tok=String(cfg.token||'').trim();
-  // Bez tokena (lokalni server / javni repo): pokusaj datoteku uz stranicu.
-  if(!repo||!tok)return Promise.resolve(path+(path.indexOf('?')<0?'?':'&')+'t='+Date.now());
-  return fetch('https://api.github.com/repos/'+repo+'/contents/'+encodeURI(path.replace(/^\/+/,''))
+  return fetch('https://api.github.com/repos/'+repo+'/contents/'+encodeURI(path.replace(/^\/+/,'').split('?')[0])
       +'?ref='+encodeURIComponent(cfg.branch||'main')+'&t='+Date.now(),
       {cache:'no-store',headers:{Authorization:'Bearer '+tok,Accept:'application/vnd.github.raw','X-GitHub-Api-Version':'2022-11-28'}})
-    .then(function(r){return r.ok?r.blob():null})
-    .then(function(b){if(!b)return '';var u=URL.createObjectURL(b);imgCache[path]=u;return u})
-    .catch(function(){return ''});
+    .then(function(r){return r.ok?r.blob():null}).catch(function(){return null});
+}
+function fetchImage(path,onUpdate){
+  if(imgCache[path])return Promise.resolve(imgCache[path]);
+  if(!sbOn()){
+    var repo=slug(cfg.repo),tok=String(cfg.token||'').trim();
+    // Bez tokena (lokalni server / javni repo): pokusaj datoteku uz stranicu.
+    if(!repo||!tok)return Promise.resolve(path+(path.indexOf('?')<0?'?':'&')+'t='+Date.now());
+  }
+  var fresh=function(){return fetchImageBlob(path).then(function(b){if(!b)return '';imgStorePut(path,b);var u=URL.createObjectURL(b);imgCache[path]=u;return u})};
+  return imgStoreGet(path).then(function(hit){
+    if(!hit||!hit.b||!hit.b.size)return fresh();
+    var u=URL.createObjectURL(hit.b);imgCache[path]=u;
+    if(Date.now()-hit.t>IMG_MAX_AGE){
+      fetchImageBlob(path).then(function(b){
+        if(!b||!b.size)return;imgStorePut(path,b);
+        if(b.size===hit.b.size)return;
+        var nu=URL.createObjectURL(b);imgCache[path]=nu;if(onUpdate)onUpdate(nu);
+      });
+    }
+    return u;
+  });
 }
 // --- Alati (kljuc 🔧): raspored OW/UW na liniji 0-2500 mm (crvena crta = sredina), pa popis.
 var tlEl=document.getElementById('tl');
@@ -663,7 +692,7 @@ function openTools(machine){
   tlEl.hidden=false;document.body.classList.add('tlpage');window.scrollTo(0,0);
   if(imgPath){
     var box=document.getElementById('tlImgBox');
-    fetchImage(imgPath).then(function(u){
+    fetchImage(imgPath,function(nu){if(seq!==tlSeq||tlEl.hidden)return;var im=box.querySelector('img');if(im)im.src=nu}).then(function(u){
       if(seq!==tlSeq||tlEl.hidden)return;
       box.innerHTML=u?'<img alt="" src="'+u+'">':'<span>'+esc(d.imgFail)+'</span>';
     });
@@ -754,7 +783,7 @@ function sbLogin(){
 function sbLogout(){
   var tok=sbSes&&sbSes.access_token;
   if(tok)fetch(SB_URL+'/auth/v1/logout',{method:'POST',headers:{apikey:SB_KEY,Authorization:'Bearer '+tok}}).catch(function(){});
-  sbSave(null);sbRole='';imgCache={};document.getElementById('usr').hidden=true;
+  sbSave(null);sbRole='';imgCache={};imgStoreClear();document.getElementById('usr').hidden=true;
   appSync();sbShowInfo();load();loadAnaList();loadVisits();
 }
 // Ima li stranica nacin za citanje (Supabase prijava ili GitHub token)?
