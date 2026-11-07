@@ -120,6 +120,34 @@ select{appearance:none;border:1px solid var(--line);background:#0b1220;color:var
 .usrnew{margin-top:10px;padding:10px 12px;border-radius:10px;border:1px solid #16a34a;background:rgba(22,163,74,.12);font-size:13px;line-height:1.6}
 .usrnew code{font-size:16px;font-weight:800;color:#4ade80;letter-spacing:.04em;user-select:all}
 .usrlist{margin-top:8px}
+#pov .povdays{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:4px;-webkit-overflow-scrolling:touch}
+#pov .povdays button{flex:0 0 auto;font-size:12px;padding:6px 10px;line-height:1.15;text-align:center}
+#pov .povdays button small{display:block;font-size:10px;font-weight:600;color:var(--dim)}
+#pov .povdays button.on{background:#1d4ed8;border-color:#3b82f6;color:#fff}
+#pov .povdays button.on small{color:#dbeafe}
+#pov .povm{margin:12px 0 4px}
+#pov .povm+.povm{padding-top:10px;border-top:1px solid var(--line)}
+#pov .ph{display:flex;align-items:baseline;gap:8px}
+#pov .ph b{font-size:17px;letter-spacing:.03em}
+#pov .ph span{margin-left:auto;font-size:12px;color:var(--dim);text-align:right}
+#pov .ph span em{font-style:normal;color:var(--txt);font-weight:700}
+#pov .pbar{position:relative;height:26px;border-radius:7px;background:#0b1220;border:1px solid var(--line);overflow:hidden;margin:7px 0 2px}
+#pov .pbar i{position:absolute;top:3px;bottom:3px;min-width:2px;border-radius:2px}
+#pov .pbar .tk{position:absolute;top:0;bottom:0;width:1px;background:rgba(148,163,184,.22)}
+#pov .pbar .fut{position:absolute;top:0;bottom:0;right:0;background:repeating-linear-gradient(45deg,transparent 0 5px,rgba(148,163,184,.14) 5px 10px)}
+#pov .pticks{position:relative;height:14px;font-size:10px;color:var(--dim);margin-bottom:4px}
+#pov .pticks span{position:absolute;transform:translateX(-50%)}
+#pov .pticks span:first-child{transform:none}
+#pov .pticks span:last-child{transform:translateX(-100%)}
+#pov .pord{display:flex;gap:9px;padding:7px 0;border-bottom:1px solid rgba(51,65,85,.55);font-size:13px}
+#pov .pord:last-child{border-bottom:0}
+#pov .pord .dot{flex:0 0 10px;height:10px;border-radius:3px;margin-top:4px}
+#pov .pord .n{flex:1;min-width:0}
+#pov .pord .n b{font-weight:700}
+#pov .pord .n small{display:block;color:var(--dim);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#pov .pord .v{text-align:right;white-space:nowrap;font-weight:700;font-variant-numeric:tabular-nums}
+#pov .pord .v small{display:block;color:var(--dim);font-weight:500;font-size:11px}
+#pov .pempty{font-size:13px;color:var(--dim);padding:6px 0}
 .usritem{padding:9px 0;font-size:13px;border-bottom:1px solid rgba(51,65,85,.55)}
 .usritem:last-child{border-bottom:0}
 .usritem .uhead{display:flex;align-items:center;gap:8px}
@@ -148,6 +176,9 @@ body.offline #cards,body.offline #sum{filter:blur(3px);opacity:.55}
 #offline span{display:block;margin-top:4px;font-size:13px;color:var(--dim)}
 /* Android aplikacija (window.AndroidApp): admin dijelovi idu u postavke, zvonce za obavijesti u zaglavlju. */
 #bell.on{background:#14532d;border-color:#166534}
+#povBtn.on{background:#1d4ed8;border-color:#3b82f6}
+body.povpage>*:not(header):not(#pov){display:none!important}
+#pov .povclose{padding:4px 10px;margin-left:6px}
 body.app h1{flex:0 0 auto}
 body.app #age{flex:1;min-width:0;white-space:normal;text-align:right;line-height:1.2}
 #appBox .chk{display:flex;align-items:center;gap:9px;font-size:13px;margin:8px 0}
@@ -159,7 +190,7 @@ body.app #age{flex:1;min-width:0;white-space:normal;text-align:right;line-height
 </style>
 </head>
 <body>
-<header><h1 id="h1Title">Flexcell - admin</h1><div id="age">ucitavam...</div><button id="bell" class="gear" hidden>&#128277;</button><button id="langBtn" class="lang" title="Jezik / Sprache">DE</button><button id="gear" class="gear" title="Postavke">&#9881;</button></header>
+<header><h1 id="h1Title">Flexcell - admin</h1><div id="age">ucitavam...</div><button id="bell" class="gear" hidden>&#128277;</button><button id="povBtn" class="gear" hidden title="Povijest">&#128197;</button><button id="langBtn" class="lang" title="Jezik / Sprache">DE</button><button id="gear" class="gear" title="Postavke">&#9881;</button></header>
 <div id="setup" class="card" hidden>
   <div id="setupHeading" style="font-weight:700;margin-bottom:2px">Postavke</div>
   <label id="lblRepo" hidden>Privatni repo s podacima (korisnik/repo)</label><input id="cfgRepo" placeholder="korisnik/flexcell-stanje" autocapitalize="off" autocorrect="off" spellcheck="false" hidden>
@@ -187,6 +218,11 @@ body.app #age{flex:1;min-width:0;white-space:normal;text-align:right;line-height
 </div>
 </div>
 <div id="cards"></div>
+<div id="pov" class="card" hidden>
+  <div class="anahead"><span id="povTitle" style="font-weight:700">Povijest</span><span id="povState" class="anastate"></span><button id="povClose" class="povclose">&#10005;</button></div>
+  <div id="povDays" class="povdays"></div>
+  <div id="povBody"></div>
+</div>
 <div id="ana" class="card">
   <div class="anahead"><span id="anaTitle" style="font-weight:700">Analiza</span><span id="anaState" class="anastate"></span></div>
   <div class="anarow">
@@ -233,6 +269,7 @@ var I18N={
     sbLoggedIn:function(e,u){return 'Prijavljen: '+e+(u?' ('+u+')':'')+' - Supabase'},sbLoggedOut:'Prijavi se e-mailom i lozinkom (Supabase).',
     sbBadLogin:'Pogresan e-mail ili lozinka',sbNoRole:'prijava uspjela, ali racun jos nema ulogu',sbExpired:'prijava je istekla - prijavi se ponovno',
     sbNoData:function(u){return 'racun ima pristup ('+u+'), ali u Supabaseu jos nema stanja - racunalo u pogonu ne salje u Supabase (Opcije: kvacica Supabase)'},
+    povTitle:'Povijest (7 dana)',povToday:'Danas',povYest:'Jucer',povDayNames:['Ned','Pon','Uto','Sri','Cet','Pet','Sub'],povNone:'Nema podataka za ovaj dan.',povIdle:'nije radio',povNoTable:'tablica povijest_dan jos ne postoji (supabase/03-povijest.sql)',povUpd:function(s){return 'osvjezeno '+s},povUpTo:function(s){return 'podaci do '+s},povWork:'rad',povPcs:'kom',povNoIp:'bez naloga',povEmpty:'Jos nema povijesti - stize s racunala nakon nove verzije aplikacije.',
     usrTitle:'Korisnici',usrName:'ime ili e-mail',usrAdd:'Dodaj',usrPwd:'Nova lozinka',usrDel:'Obrisi',usrNoRole:'BEZ ULOGE',usrMe:'ti',
     usrCreated:function(e,p){return 'Racun <b>'+e+'</b> - lozinka: <code>'+p+'</code><br>Prepisi je sad, vise se ne prikazuje. Na stranici: &#9881; &rarr; E-mail + Lozinka &rarr; Prijava.'},
     usrPwdNew:function(e,p){return 'Nova lozinka za <b>'+e+'</b>: <code>'+p+'</code><br>Prepisi je sad, vise se ne prikazuje.'},
@@ -328,6 +365,7 @@ var I18N={
     sbLoggedIn:function(e,u){return 'Angemeldet: '+e+(u?' ('+u+')':'')+' - Supabase'},sbLoggedOut:'Mit E-Mail und Passwort anmelden (Supabase).',
     sbBadLogin:'Falsche E-Mail oder falsches Passwort',sbNoRole:'Anmeldung ok, aber das Konto hat noch keine Rolle',sbExpired:'Anmeldung abgelaufen - bitte neu anmelden',
     sbNoData:function(u){return 'Konto hat Zugriff ('+u+'), aber in Supabase gibt es noch keinen Status - der PC in der Halle sendet nicht an Supabase (Optionen: Haken Supabase)'},
+    povTitle:'Verlauf (7 Tage)',povToday:'Heute',povYest:'Gestern',povDayNames:['So','Mo','Di','Mi','Do','Fr','Sa'],povNone:'Keine Daten für diesen Tag.',povIdle:'kein Lauf',povNoTable:'Tabelle povijest_dan fehlt noch (supabase/03-povijest.sql)',povUpd:function(s){return 'aktualisiert '+s},povUpTo:function(s){return 'Daten bis '+s},povWork:'Lauf',povPcs:'Stk',povNoIp:'ohne Auftrag',povEmpty:'Noch kein Verlauf - kommt vom PC nach der neuen App-Version.',
     usrTitle:'Benutzer',usrName:'Name oder E-Mail',usrAdd:'Hinzufügen',usrPwd:'Neues Passwort',usrDel:'Löschen',usrNoRole:'OHNE ROLLE',usrMe:'du',
     usrCreated:function(e,p){return 'Konto <b>'+e+'</b> - Passwort: <code>'+p+'</code><br>Jetzt notieren, es wird nicht mehr angezeigt. Auf der Seite: &#9881; &rarr; E-Mail + Passwort &rarr; Anmelden.'},
     usrPwdNew:function(e,p){return 'Neues Passwort für <b>'+e+'</b>: <code>'+p+'</code><br>Jetzt notieren, es wird nicht mehr angezeigt.'},
@@ -472,6 +510,7 @@ function applyStaticText(){
   document.getElementById('sbLogin').textContent=d.btnLogin;
   document.getElementById('sbLogout').textContent=d.btnLogout;
   document.getElementById('usrTitle').textContent=d.usrTitle;
+  document.getElementById('povTitle').textContent=d.povTitle;document.getElementById('povBtn').title=d.povTitle;renderPov();
   document.getElementById('usrName').placeholder=d.usrName;
   document.getElementById('usrAdd').textContent=d.usrAdd;
   sbShowInfo();
@@ -755,7 +794,7 @@ function sbJson(path,opt){
 }
 function sbLoadRole(){
   return sbJson('/rest/v1/rpc/moja_uloga',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})
-    .then(function(u){sbRole=u||'';sbShowInfo();document.getElementById('usr').hidden=sbRole!=='admin';if(sbRole==='admin')loadUsers();return sbRole});
+    .then(function(u){sbRole=u||'';sbShowInfo();document.getElementById('usr').hidden=sbRole!=='admin';document.getElementById('povBtn').hidden=sbRole!=='admin';if(sbRole!=='admin')closePov();if(sbRole==='admin')loadUsers();return sbRole});
 }
 function sbShowInfo(msg){
   var el=document.getElementById('sbInfo');if(!el)return;
@@ -783,7 +822,7 @@ function sbLogin(){
 function sbLogout(){
   var tok=sbSes&&sbSes.access_token;
   if(tok)fetch(SB_URL+'/auth/v1/logout',{method:'POST',headers:{apikey:SB_KEY,Authorization:'Bearer '+tok}}).catch(function(){});
-  sbSave(null);sbRole='';imgCache={};imgStoreClear();document.getElementById('usr').hidden=true;
+  sbSave(null);sbRole='';imgCache={};imgStoreClear();document.getElementById('usr').hidden=true;closePov();document.getElementById('povBtn').hidden=true;povRows=null;
   appSync();sbShowInfo();load();loadAnaList();loadVisits();
 }
 // Ima li stranica nacin za citanje (Supabase prijava ili GitHub token)?
@@ -1265,11 +1304,86 @@ if(APP){
   appSync();
   appRefresh();
 }
+
+// ---- povijest zadnjih 7 dana (samo admin, tablica povijest_dan) ----
+// Racunalo salje red po danu i stroju: segs = [od, do, nalog] u sekundama od ponoci, ord = nalozi.
+var povRows=null,povErr='',povSel='',povAt=0;
+var POV_COL=['#38bdf8','#22c55e','#f59e0b','#a78bfa','#f472b6','#2dd4bf','#fb7185','#a3e635','#fbbf24','#60a5fa'];
+function povYmd(d){return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)}
+function povDayList(){var out=[],n=new Date();for(var i=0;i<7;i++){var d=new Date(n.getFullYear(),n.getMonth(),n.getDate()-i);out.push({ymd:povYmd(d),d:d,i:i})}return out}
+function povClock(dayMs,sec){if(sec>=86000&&new Date(dayMs+sec*1000).getHours()===0)return '24:00';var d=new Date(dayMs+sec*1000);return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)}
+function povDur(sec){sec=Math.max(0,Math.round(sec/60));var h=Math.floor(sec/60),m=sec%60;return h?h+'h '+('0'+m).slice(-2)+'m':m+'m'}
+function loadPov(){
+  if(!sbOn()||sbRole!=='admin')return;
+  var from=povDayList()[6].ymd;
+  sbJson('/rest/v1/povijest_dan?select=dan,stroj,podaci,at&dan=gte.'+from+'&order=dan.desc').then(function(rows){
+    povRows=rows||[];povErr='';povAt=Date.now();renderPov();
+  }).catch(function(e){
+    var m=String(e&&e.message||e);povErr=/404|PGRST205|povijest_dan/.test(m)?t().povNoTable:m;renderPov();
+  });
+}
+function renderPov(){
+  var box=document.getElementById('pov');if(!box||box.hidden)return;
+  var d=t(),st=document.getElementById('povState'),daysEl=document.getElementById('povDays'),body=document.getElementById('povBody');
+  var list=povDayList();if(!povSel)povSel=list[0].ymd;
+  var byDay={},machSeen={},lastAt=0;
+  (povRows||[]).forEach(function(r){(byDay[r.dan]=byDay[r.dan]||{})[r.stroj]=r;var p=r.podaci||{};if(p.rad>0||(p.segs&&p.segs.length))machSeen[r.stroj]=1;var a=Date.parse(r.at||'')||0;if(a>lastAt)lastAt=a});
+  st.className='anastate'+(povErr?' bad':'');
+  st.textContent=povErr?povErr:(lastAt?d.povUpd(new Date(lastAt).toLocaleString(lang==='de'?'de-AT':'hr-HR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})):'');
+  daysEl.innerHTML=list.map(function(x){
+    var lbl=x.i===0?d.povToday:x.i===1?d.povYest:d.povDayNames[x.d.getDay()];
+    return '<button data-pov="'+x.ymd+'"'+(x.ymd===povSel?' class="on"':'')+'>'+esc(lbl)+'<small>'+('0'+x.d.getDate()).slice(-2)+'.'+('0'+(x.d.getMonth()+1)).slice(-2)+'.</small></button>';
+  }).join('');
+  if(povRows==null){body.innerHTML=povErr?'':'<div class="pempty">'+esc(d.loading)+'</div>';return}
+  if(!povRows.length){body.innerHTML='<div class="pempty">'+esc(d.povEmpty)+'</div>';return}
+  var day=byDay[povSel];
+  if(!day){body.innerHTML='<div class="pempty">'+esc(d.povNone)+'</div>';return}
+  var machs=Object.keys(machSeen).sort();if(!machs.length)machs=Object.keys(day).sort();
+  body.innerHTML=machs.map(function(m){
+    var r=day[m];
+    if(!r)return '<div class="povm"><div class="ph"><b>'+esc(m)+'</b><span>-</span></div></div>';
+    var p=r.podaci||{},len=Number(p.len)||86400,dayMs=Number(p.dayMs)||0,upTo=Math.min(len,Number(p.do)||len),ord=p.ord||[],segs=p.segs||[];
+    var h='<div class="povm"><div class="ph"><b>'+esc(m)+'</b><span>'+(p.rad>0?d.povWork+' <em>'+povDur(p.rad)+'</em> · <em>'+(Number(p.kom)||0)+'</em> '+d.povPcs:esc(d.povIdle))+(upTo<len?'<br>'+esc(d.povUpTo(povClock(dayMs,upTo))):'')+'</span></div>';
+    h+='<div class="pbar">';
+    for(var hr=3;hr<24;hr+=3)h+='<span class="tk" style="left:'+(hr*3600/len*100).toFixed(3)+'%"></span>';
+    segs.forEach(function(s){var a=s[0]/len*100,w=Math.max(0,(s[1]-s[0])/len*100);h+='<i style="left:'+a.toFixed(3)+'%;width:'+w.toFixed(3)+'%;background:'+POV_COL[(s[2]||0)%POV_COL.length]+'"></i>'});
+    if(upTo<len)h+='<span class="fut" style="left:'+(upTo/len*100).toFixed(3)+'%"></span>';
+    h+='</div><div class="pticks"><span style="left:0">0</span><span style="left:25%">6</span><span style="left:50%">12</span><span style="left:75%">18</span><span style="left:100%">24</span></div>';
+    var idx=ord.map(function(o,i){return i}).sort(function(a,b){return (ord[a].od||0)-(ord[b].od||0)});
+    idx.forEach(function(i){
+      var o=ord[i],sub=[o.prog?'CNC '+o.prog:'',o.art||'',o.ku||''].filter(Boolean).join(' · ');
+      h+='<div class="pord"><span class="dot" style="background:'+POV_COL[i%POV_COL.length]+'"></span><div class="n"><b>'+esc(o.ip||d.povNoIp)+'</b><small>'+esc(sub||'-')+'</small><small>'+povClock(dayMs,o.od)+' – '+povClock(dayMs,o.do)+'</small></div><div class="v">'+(Number(o.kom)||0)+' '+d.povPcs+'<small>'+povDur(o.sec)+'</small></div></div>';
+    });
+    return h+'</div>';
+  }).join('');
+}
+document.getElementById('povDays').addEventListener('click',function(e){var b=e.target.closest('button[data-pov]');if(!b)return;povSel=b.getAttribute('data-pov');renderPov();if(Date.now()-povAt>60000)loadPov()});
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&povOpen()&&Date.now()-povAt>5*60000)loadPov()});
+// Povijest je zasebna stranica: gumb pored postavki je otvara (ostalo se sakrije, zaglavlje ostaje),
+// isti gumb, X ili Esc vraca na pregled na isto mjesto.
+var povScrollY=0;
+function povOpen(){return document.body.classList.contains('povpage')}
+function openPov(){
+  if(sbRole!=='admin'||povOpen())return;
+  povScrollY=window.scrollY||0;
+  document.getElementById('pov').hidden=false;document.body.classList.add('povpage');document.getElementById('povBtn').classList.add('on');
+  window.scrollTo(0,0);renderPov();
+  if(povRows==null||Date.now()-povAt>60000)loadPov();
+}
+function closePov(){
+  var was=povOpen();
+  document.getElementById('pov').hidden=true;document.body.classList.remove('povpage');document.getElementById('povBtn').classList.remove('on');
+  if(was)window.scrollTo(0,povScrollY);
+}
+document.getElementById('povBtn').addEventListener('click',function(){povOpen()?closePov():openPov()});
+document.getElementById('povClose').addEventListener('click',closePov);
+document.addEventListener('keydown',function(e){if(povOpen()&&(e.key==='Escape'||e.key==='Esc'))closePov()});
 setInterval(load,30000);
 setInterval(updateAge,30000);
 setInterval(pollAnswer,POLL_MS);
 setInterval(tickPending,1000);
 setInterval(loadVisits,60000);
+setInterval(function(){if(povOpen()&&!document.hidden)loadPov()},5*60000);
 applyStaticText();
 if(!sbOn()&&!token()&&!SRC)openSetup();
 if(sbOn())sbLoadRole().catch(function(){});
