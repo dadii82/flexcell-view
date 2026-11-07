@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0f172a">
 <!-- Verziju upisuje aplikacija pri objavi; po njoj zna je li objavljena stranica starija od njene. -->
-<meta name="flexcell-page-version" content="2.5.74">
+<meta name="flexcell-page-version" content="2.5.75">
 <title>Flexcell - stanje</title>
 <style>
 :root{--bg:#0f172a;--card:#1e293b;--line:#334155;--txt:#e2e8f0;--dim:#94a3b8;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--idle:#64748b}
@@ -313,8 +313,6 @@ function render(d){
     return '<div class="'+cardCls+'"'+cardAttr+'>'
       +'<div class="top"><span class="mach">'+esc(m.machine)+'</span>'
       +'<span><span class="prog">'+esc(m.program||'-')+'</span> <span class="ip">'+esc(m.ip||'')+'</span></span>'
-      +(m.img?'<span class="imgtag">&#128247;</span>':'')
-      +(m.tools?'<span class="tooltag" data-tools="'+esc(m.machine)+'" title="'+esc(dict.toolHint)+'">&#128295;</span>':'')
       +'<span class="badge '+statusClass(cardStatus(m))+'">'+esc(statusLabel(cardStatus(m)))+'</span></div>'
       +(m.stale?'<div class="stalenote">'+esc(staleText(m))+'</div>':'')
       +(m.name?'<div class="ip" style="margin:-4px 0 6px">'+esc(m.name)+'</div>':'')
