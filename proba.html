@@ -37,10 +37,11 @@ h1{margin:0;font-size:17px;letter-spacing:.02em;flex:1}
 .next{margin-top:9px;padding-top:8px;border-top:1px dashed var(--line);font-size:12px;color:var(--dim)}
 .next b{color:#cbd5e1}
 .stalenote{margin:-2px 0 6px;font-size:12px;font-weight:700;color:var(--warn)}
-.card.hasimg{cursor:zoom-in}
+.card.hasimg{cursor:pointer}
 .imgtag{font-size:14px;line-height:1;opacity:.75}
 .tooltag{font-size:15px;line-height:1;padding:3px 7px;margin:-3px 0;border-radius:8px;border:1px solid var(--line);background:#0b1220;cursor:pointer}
-#tl{position:fixed;inset:0;z-index:61;overflow:auto;padding:16px 12px 30px;background:#0b1220}
+#tl{padding:4px 0 30px;min-height:100vh}
+body.tlpage>*:not(#tl):not(#offline){display:none!important}
 #tl .tlbox{max-width:760px;margin:0 auto}
 #tl .tlhead{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 #tl .tlhead b{flex:1;font-size:17px}
@@ -79,10 +80,6 @@ h1{margin:0;font-size:17px;letter-spacing:.02em;flex:1}
 #tl .ticons .ti svg{display:block;overflow:visible}
 #tl .ticons .ti i{position:absolute;top:-4px;right:-10px;font-style:normal;font-size:12px;font-weight:900;color:#fbbf24}
 #tl .tnone{color:var(--dim);font-size:13px;padding:6px 0}
-#lb{position:fixed;inset:0;z-index:62;display:flex;align-items:center;justify-content:center;padding:10px;background:rgba(2,6,23,.94);cursor:zoom-out}
-#lb[hidden]{display:none}
-#lb img{width:96vw;height:auto;max-width:96vw;max-height:90vh;object-fit:contain;background:#fff;border-radius:10px;border:1px solid var(--line);background:#0b1220}
-#lbnote{position:absolute;left:0;right:0;bottom:18px;text-align:center;font-size:13px;color:var(--dim)}
 .sum{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--dim);padding:2px 4px}
 .sum b{color:var(--txt)}
 button{appearance:none;border:1px solid var(--line);background:#0b1220;color:var(--txt);font:600 13px inherit;padding:9px 14px;border-radius:10px}
@@ -131,7 +128,6 @@ body.offline #cards,body.offline #sum{filter:blur(3px);opacity:.55}
 <div id="srcBadge"><i></i><span id="srcBadgeTxt"></span></div>
 <div id="offline" hidden><div class="box"><b>OFFLINE</b><span id="offlineSub"></span></div></div>
 <div id="tl" hidden><div class="tlbox"><div class="tlhead"><b id="tlTitle"></b><button id="tlClose">&#10005;</button></div><div id="tlBody"></div></div></div>
-<div id="lb" hidden><img id="lbimg" alt=""><div id="lbnote"></div></div>
 <script>
 (function(){
 var I18N={
@@ -470,8 +466,7 @@ function writeVisitSb(kind){
 }
 // Slika se ne prikazuje na kartici: klik bilo gdje po kartici je otvori preko cijelog
 // ekrana, klik bilo gdje (ili Esc) je zatvori. Dohvaca se tek na klik i pamti u imgCache.
-var imgCache={},lbSeq=0;
-var lb=document.getElementById('lb'),lbImg=document.getElementById('lbimg'),lbNote=document.getElementById('lbnote');
+var imgCache={};
 function fetchImage(path){
   if(imgCache[path])return Promise.resolve(imgCache[path]);
   if(sbOn()){
@@ -490,19 +485,6 @@ function fetchImage(path){
     .then(function(r){return r.ok?r.blob():null})
     .then(function(b){if(!b)return '';var u=URL.createObjectURL(b);imgCache[path]=u;return u})
     .catch(function(){return ''});
-}
-function closeImage(){lbSeq++;lb.hidden=true;lbImg.removeAttribute('src');lbNote.textContent=''}
-function openImage(path){
-  if(!path)return;
-  var seq=++lbSeq;
-  lbImg.removeAttribute('src');
-  lbNote.textContent=imgCache[path]?'':t().imgLoading;
-  lb.hidden=false;
-  fetchImage(path).then(function(u){
-    if(seq!==lbSeq)return;                    // u medjuvremenu zatvoreno ili otvorena druga slika
-    if(!u){lbNote.textContent=t().imgFail;return}
-    lbNote.textContent='';lbImg.src=u;
-  });
 }
 // --- Alati (kljuc 🔧): raspored OW/UW na liniji 0-2500 mm (crvena crta = sredina), pa popis.
 var tlEl=document.getElementById('tl');
@@ -601,7 +583,8 @@ function openTools(machine){
   if(!m.tools)h+='<div class="tnone">'+esc(d.toolNone)+'</div>';
   document.getElementById('tlTitle').textContent=(m.tools?d.toolTitle+' · ':'')+m.machine+' · '+(m.program||'-');
   document.getElementById('tlBody').innerHTML=h||'<div class="tnone">'+esc(d.toolNone)+'</div>';
-  tlEl.hidden=false;tlEl.scrollTop=0;
+  if(tlEl.hidden)tlScrollY=window.scrollY||0;
+  tlEl.hidden=false;document.body.classList.add('tlpage');window.scrollTo(0,0);
   if(imgPath){
     var box=document.getElementById('tlImgBox');
     fetchImage(imgPath).then(function(u){
@@ -610,15 +593,15 @@ function openTools(machine){
     });
   }
 }
-var tlSeq=0;
+var tlSeq=0,tlScrollY=0;
 var VIEW_KEY='flexcell-prikaz-programa';
 function loadView(){try{return localStorage.getItem(VIEW_KEY)==='slika'?'slika':'detalji'}catch(e){return 'detalji'}}
 (function(){var sel=document.getElementById('cfgView');if(!sel)return;sel.value=loadView();sel.addEventListener('change',function(){try{localStorage.setItem(VIEW_KEY,sel.value)}catch(e){}})})();
-function closeTools(){tlSeq++;tlEl.hidden=true}
+function closeTools(){tlSeq++;if(tlEl.hidden)return;tlEl.hidden=true;document.body.classList.remove('tlpage');window.scrollTo(0,tlScrollY)}
 document.getElementById('tlClose').addEventListener('click',closeTools);
 // Dodir bilo gdje u prozoru (slika, alati, prazno) vraca na pregled.
 tlEl.addEventListener('click',function(){closeTools()});
-document.addEventListener('keydown',function(e){if(!tlEl.hidden&&lb.hidden&&(e.key==='Escape'||e.key==='Esc'))closeTools()});
+document.addEventListener('keydown',function(e){if(!tlEl.hidden&&(e.key==='Escape'||e.key==='Esc'))closeTools()});
 function bindCardImages(){
   Array.prototype.forEach.call(cards.querySelectorAll('.tooltag[data-tools]'),function(el){
     el.addEventListener('click',function(e){e.stopPropagation();openTools(el.getAttribute('data-tools')||'')});
@@ -627,8 +610,6 @@ function bindCardImages(){
     el.addEventListener('click',function(){openTools(el.getAttribute('data-mach')||'')});
   });
 }
-lb.addEventListener('click',closeImage);
-document.addEventListener('keydown',function(e){if(!lb.hidden&&(e.key==='Escape'||e.key==='Esc'))closeImage()});
 function fail(msg){errEl.textContent=msg}
 // Privatni repo se cita preko contents API-ja (Accept: raw vraca sam sadrzaj datoteke).
 // Ako token nije unesen, stranica pada na obicnu datoteku uz sebe - za javni repo / lokalni server.
