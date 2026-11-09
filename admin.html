@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0f172a">
 <!-- Admin stranica: kao user stranica (mobile-status.html), ali s trazenjem analize i pregledima. Aplikacija je NE objavljuje
      automatski (auto-objava dira samo cfg.page = index.html), pa se gura rucno preko gh/GitHuba. -->
-<meta name="flexcell-page-version" content="2.5.77">
+<meta name="flexcell-page-version" content="2.5.78">
 <title>Flexcell - admin</title>
 <style>
 :root{--bg:#0f172a;--card:#1e293b;--line:#334155;--txt:#e2e8f0;--dim:#94a3b8;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--idle:#64748b}
@@ -69,7 +69,7 @@ body.tlpage>*:not(#tl):not(#offline){display:none!important}
 #tl .tlprops .k{color:var(--dim);flex:0 0 auto}
 #tl .tlprops .v{font-weight:700;text-align:right;min-width:0;overflow-wrap:anywhere}
 #tl .tlprops .v small{color:var(--dim);font-weight:400}
-#tl .tlprops .frno{color:#fb923c}#tl .tlprops .frok{color:#4ade80;font-weight:700}
+#tl .tlprops .frno{color:#f87171;font-weight:800}#tl .tlprops .frok{color:#4ade80;font-weight:700}
 #tl{cursor:pointer}
 #tl .tlimg{margin:0 0 6px;border-radius:12px;border:1px solid var(--line);background:#fff;overflow:hidden;min-height:120px;display:flex;align-items:center;justify-content:center}
 #tl .tlimg img{display:block;width:100%;height:auto;max-height:62vh;object-fit:contain}
@@ -179,6 +179,10 @@ body.offline #cards,body.offline #sum{filter:blur(3px);opacity:.55}
 #povBtn.on{background:#1d4ed8;border-color:#3b82f6}
 body.povpage>*:not(header):not(#pov){display:none!important}
 #pov .povclose{padding:4px 10px;margin-left:6px}
+#pov .povref{padding:4px 10px;margin-left:auto}
+#pov .povref:disabled{opacity:.55}
+#pov .povref.spin span{display:inline-block;animation:povspin 1s linear infinite}
+@keyframes povspin{to{transform:rotate(360deg)}}
 body.app h1{flex:0 0 auto}
 body.app #age{flex:1;min-width:0;white-space:normal;text-align:right;line-height:1.2}
 #appBox .chk{display:flex;align-items:center;gap:9px;font-size:13px;margin:8px 0}
@@ -219,7 +223,7 @@ body.app #age{flex:1;min-width:0;white-space:normal;text-align:right;line-height
 </div>
 <div id="cards"></div>
 <div id="pov" class="card" hidden>
-  <div class="anahead"><span id="povTitle" style="font-weight:700">Povijest</span><span id="povState" class="anastate"></span><button id="povClose" class="povclose">&#10005;</button></div>
+  <div class="anahead"><span id="povTitle" style="font-weight:700">Povijest</span><span id="povState" class="anastate"></span><button id="povRef" class="povref" title="Osvjezi"><span>&#10227;</span></button><button id="povClose" class="povclose">&#10005;</button></div>
   <div id="povDays" class="povdays"></div>
   <div id="povBody"></div>
 </div>
@@ -269,7 +273,7 @@ var I18N={
     sbLoggedIn:function(e,u){return 'Prijavljen: '+e+(u?' ('+u+')':'')+' - Supabase'},sbLoggedOut:'Prijavi se e-mailom i lozinkom (Supabase).',
     sbBadLogin:'Pogresan e-mail ili lozinka',sbNoRole:'prijava uspjela, ali racun jos nema ulogu',sbExpired:'prijava je istekla - prijavi se ponovno',
     sbNoData:function(u){return 'racun ima pristup ('+u+'), ali u Supabaseu jos nema stanja - racunalo u pogonu ne salje u Supabase (Opcije: kvacica Supabase)'},
-    povTitle:'Povijest (7 dana)',povToday:'Danas',povYest:'Jucer',povDayNames:['Ned','Pon','Uto','Sri','Cet','Pet','Sub'],povNone:'Nema podataka za ovaj dan.',povIdle:'nije radio',povNoTable:'tablica povijest_dan jos ne postoji (supabase/03-povijest.sql)',povUpd:function(s){return 'osvjezeno '+s},povUpTo:function(s){return 'podaci do '+s},povWork:'rad',povPcs:'kom',povNoIp:'bez naloga',povEmpty:'Jos nema povijesti - stize s racunala nakon nove verzije aplikacije.',
+    povTitle:'Povijest (7 dana)',povRefT:'Osvjezi (racunalo posalje svjeze podatke)',povReqWait:'trazim od racunala...',povReqOk:'racunalo poslalo svjeze',povReqTimeout:'racunalo se ne javlja (ugaseno ili zauzeto?)',povReqErr:function(m){return 'nije uspjelo: '+m},povToday:'Danas',povYest:'Jucer',povDayNames:['Ned','Pon','Uto','Sri','Cet','Pet','Sub'],povNone:'Nema podataka za ovaj dan.',povIdle:'nije radio',povNoTable:'tablica povijest_dan jos ne postoji (supabase/03-povijest.sql)',povUpd:function(s){return 'osvjezeno '+s},povUpTo:function(s){return 'podaci do '+s},povWork:'rad',povPcs:'kom',povNoIp:'bez naloga',povEmpty:'Jos nema povijesti - stize s racunala nakon nove verzije aplikacije.',
     usrTitle:'Korisnici',usrName:'ime ili e-mail',usrAdd:'Dodaj',usrPwd:'Nova lozinka',usrDel:'Obrisi',usrNoRole:'BEZ ULOGE',usrMe:'ti',
     usrCreated:function(e,p){return 'Racun <b>'+e+'</b> - lozinka: <code>'+p+'</code><br>Prepisi je sad, vise se ne prikazuje. Na stranici: &#9881; &rarr; E-mail + Lozinka &rarr; Prijava.'},
     usrPwdNew:function(e,p){return 'Nova lozinka za <b>'+e+'</b>: <code>'+p+'</code><br>Prepisi je sad, vise se ne prikazuje.'},
@@ -365,7 +369,7 @@ var I18N={
     sbLoggedIn:function(e,u){return 'Angemeldet: '+e+(u?' ('+u+')':'')+' - Supabase'},sbLoggedOut:'Mit E-Mail und Passwort anmelden (Supabase).',
     sbBadLogin:'Falsche E-Mail oder falsches Passwort',sbNoRole:'Anmeldung ok, aber das Konto hat noch keine Rolle',sbExpired:'Anmeldung abgelaufen - bitte neu anmelden',
     sbNoData:function(u){return 'Konto hat Zugriff ('+u+'), aber in Supabase gibt es noch keinen Status - der PC in der Halle sendet nicht an Supabase (Optionen: Haken Supabase)'},
-    povTitle:'Verlauf (7 Tage)',povToday:'Heute',povYest:'Gestern',povDayNames:['So','Mo','Di','Mi','Do','Fr','Sa'],povNone:'Keine Daten für diesen Tag.',povIdle:'kein Lauf',povNoTable:'Tabelle povijest_dan fehlt noch (supabase/03-povijest.sql)',povUpd:function(s){return 'aktualisiert '+s},povUpTo:function(s){return 'Daten bis '+s},povWork:'Lauf',povPcs:'Stk',povNoIp:'ohne Auftrag',povEmpty:'Noch kein Verlauf - kommt vom PC nach der neuen App-Version.',
+    povTitle:'Verlauf (7 Tage)',povRefT:'Aktualisieren (PC sendet frische Daten)',povReqWait:'frage den PC an...',povReqOk:'PC hat frische Daten gesendet',povReqTimeout:'PC antwortet nicht (aus oder beschäftigt?)',povReqErr:function(m){return 'fehlgeschlagen: '+m},povToday:'Heute',povYest:'Gestern',povDayNames:['So','Mo','Di','Mi','Do','Fr','Sa'],povNone:'Keine Daten für diesen Tag.',povIdle:'kein Lauf',povNoTable:'Tabelle povijest_dan fehlt noch (supabase/03-povijest.sql)',povUpd:function(s){return 'aktualisiert '+s},povUpTo:function(s){return 'Daten bis '+s},povWork:'Lauf',povPcs:'Stk',povNoIp:'ohne Auftrag',povEmpty:'Noch kein Verlauf - kommt vom PC nach der neuen App-Version.',
     usrTitle:'Benutzer',usrName:'Name oder E-Mail',usrAdd:'Hinzufügen',usrPwd:'Neues Passwort',usrDel:'Löschen',usrNoRole:'OHNE ROLLE',usrMe:'du',
     usrCreated:function(e,p){return 'Konto <b>'+e+'</b> - Passwort: <code>'+p+'</code><br>Jetzt notieren, es wird nicht mehr angezeigt. Auf der Seite: &#9881; &rarr; E-Mail + Passwort &rarr; Anmelden.'},
     usrPwdNew:function(e,p){return 'Neues Passwort für <b>'+e+'</b>: <code>'+p+'</code><br>Jetzt notieren, es wird nicht mehr angezeigt.'},
@@ -510,7 +514,7 @@ function applyStaticText(){
   document.getElementById('sbLogin').textContent=d.btnLogin;
   document.getElementById('sbLogout').textContent=d.btnLogout;
   document.getElementById('usrTitle').textContent=d.usrTitle;
-  document.getElementById('povTitle').textContent=d.povTitle;document.getElementById('povBtn').title=d.povTitle;renderPov();
+  document.getElementById('povTitle').textContent=d.povTitle;document.getElementById('povRef').title=d.povRefT;document.getElementById('povBtn').title=d.povTitle;renderPov();
   document.getElementById('usrName').placeholder=d.usrName;
   document.getElementById('usrAdd').textContent=d.usrAdd;
   sbShowInfo();
@@ -1307,7 +1311,7 @@ if(APP){
 
 // ---- povijest zadnjih 7 dana (samo admin, tablica povijest_dan) ----
 // Racunalo salje red po danu i stroju: segs = [od, do, nalog] u sekundama od ponoci, ord = nalozi.
-var povRows=null,povErr='',povSel='',povAt=0;
+var povRows=null,povErr='',povSel='',povAt=0,povReq={id:'',at:0,msg:'',bad:false,timer:0};
 var POV_COL=['#38bdf8','#22c55e','#f59e0b','#a78bfa','#f472b6','#2dd4bf','#fb7185','#a3e635','#fbbf24','#60a5fa'];
 function povYmd(d){return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2)}
 function povDayList(){var out=[],n=new Date();for(var i=0;i<7;i++){var d=new Date(n.getFullYear(),n.getMonth(),n.getDate()-i);out.push({ymd:povYmd(d),d:d,i:i})}return out}
@@ -1328,8 +1332,8 @@ function renderPov(){
   var list=povDayList();if(!povSel)povSel=list[0].ymd;
   var byDay={},machSeen={},lastAt=0;
   (povRows||[]).forEach(function(r){(byDay[r.dan]=byDay[r.dan]||{})[r.stroj]=r;var p=r.podaci||{};if(p.rad>0||(p.segs&&p.segs.length))machSeen[r.stroj]=1;var a=Date.parse(r.at||'')||0;if(a>lastAt)lastAt=a});
-  st.className='anastate'+(povErr?' bad':'');
-  st.textContent=povErr?povErr:(lastAt?d.povUpd(new Date(lastAt).toLocaleString(lang==='de'?'de-AT':'hr-HR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})):'');
+  st.className='anastate'+(povErr||povReq.bad?' bad':'');
+  st.textContent=povErr?povErr:povReq.msg?povReq.msg:(lastAt?d.povUpd(new Date(lastAt).toLocaleString(lang==='de'?'de-AT':'hr-HR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})):'');
   daysEl.innerHTML=list.map(function(x){
     var lbl=x.i===0?d.povToday:x.i===1?d.povYest:d.povDayNames[x.d.getDay()];
     return '<button data-pov="'+x.ymd+'"'+(x.ymd===povSel?' class="on"':'')+'>'+esc(lbl)+'<small>'+('0'+x.d.getDate()).slice(-2)+'.'+('0'+(x.d.getMonth()+1)).slice(-2)+'.</small></button>';
@@ -1377,6 +1381,33 @@ function closePov(){
 }
 document.getElementById('povBtn').addEventListener('click',function(){povOpen()?closePov():openPov()});
 document.getElementById('povClose').addEventListener('click',closePov);
+// Gumb osvjezi: odmah ponovno procita Supabase i zatrazi od racunala (tablica zahtjevi, id "pov-...")
+// da procita povijest strojeva i posalje svjeze; kad javi gotovo, stranica opet ucita povijest.
+function povReqEnd(msg,bad){
+  clearInterval(povReq.timer);povReq.timer=0;povReq.id='';povReq.msg=msg||'';povReq.bad=!!bad;
+  var b=document.getElementById('povRef');b.disabled=false;b.classList.remove('spin');
+  renderPov();
+  if(msg&&!bad)setTimeout(function(){if(!povReq.id&&povReq.msg===msg){povReq.msg='';renderPov()}},8000);
+}
+function povReqPoll(){
+  if(!povReq.id)return;
+  if(Date.now()-povReq.at>4*60000){povReqEnd(t().povReqTimeout,true);return}
+  sbJson('/rest/v1/zahtjevi?id=eq.'+encodeURIComponent(povReq.id)+'&select=stanje,odgovor').then(function(rows){
+    var r=rows&&rows[0];if(!r||!povReq.id||r.stanje==='novo')return;
+    if(r.stanje==='gotovo'){povReqEnd(t().povReqOk,false);loadPov()}
+    else povReqEnd(t().povReqErr((r.odgovor&&r.odgovor.err)||r.stanje),true);
+  }).catch(function(){});
+}
+document.getElementById('povRef').addEventListener('click',function(){
+  if(povReq.id||!sbOn()||sbRole!=='admin')return;
+  loadPov();
+  var id='pov-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7);
+  var b=document.getElementById('povRef');b.disabled=true;b.classList.add('spin');
+  povReq.id=id;povReq.at=Date.now();povReq.msg=t().povReqWait;povReq.bad=false;renderPov();
+  sbJson('/rest/v1/zahtjevi',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({id:id,sati:1})})
+    .then(function(){povReq.timer=setInterval(povReqPoll,5000)})
+    .catch(function(e){povReqEnd(t().povReqErr(String(e&&e.message||e)),true)});
+});
 document.addEventListener('keydown',function(e){if(povOpen()&&(e.key==='Escape'||e.key==='Esc'))closePov()});
 setInterval(load,30000);
 setInterval(updateAge,30000);
