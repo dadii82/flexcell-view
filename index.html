@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0f172a">
 <!-- Verziju upisuje aplikacija pri objavi; po njoj zna je li objavljena stranica starija od njene. -->
-<meta name="flexcell-page-version" content="2.5.78">
+<meta name="flexcell-page-version" content="2.5.83">
 <title>Flexcell - stanje</title>
 <style>
 :root{--bg:#0f172a;--card:#1e293b;--line:#334155;--txt:#e2e8f0;--dim:#94a3b8;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--idle:#64748b}
@@ -155,6 +155,7 @@ var I18N={
     kvPieces:'komada',
     kvSecPerPart:'s/kom',
     kvEta:'zavrsetak',
+    kvLiefer:'rok',kvLager:'skladište',lfOver:'rok prosao',lfToday:'isporuka danas',lfTomorrow:'isporuka sutra',lfLate:function(n){return 'kasni '+n+' d'},lfLeft:function(n){return 'jos '+n+' radn'+(n===1?'i dan':'a dana')},
     kvLastPiece:'zadnji komad',
     kvCounter:'brojac stroja',
     next:'slijedi',
@@ -200,6 +201,7 @@ var I18N={
     kvPieces:'Stück',
     kvSecPerPart:'s/Stk',
     kvEta:'Fertig',
+    kvLiefer:'Termin',kvLager:'Lagerplatz',lfOver:'überschritten',lfToday:'Lieferung heute',lfTomorrow:'Lieferung morgen',lfLate:function(n){return n+' T zu spät'},lfLeft:function(n){return 'noch '+n+' Arbeitstag'+(n===1?'':'e')},
     kvLastPiece:'letztes Teil',
     kvCounter:'Maschinenzähler',
     next:'als nächstes',
@@ -295,6 +297,19 @@ function updateAge(){
   offlineEl.hidden=!off;
   if(off)offlineSubEl.textContent=dict.offlineSub(min>=120?Math.round(min/60)+' h':min+' '+dict.minSuffix);
 }
+var LF_COL={over:'#f87171',today:'#f87171',late:'#f87171',d1:'#f87171',d2:'#fb923c',d3:'#facc15'};
+function lfText(x,dict){
+  var n=Number(x.ln)||0;
+  var c=Number(x.ld);
+  if(x.ld!=null&&isFinite(c)){if(c<0)return dict.lfLate(-c);if(c===0)return dict.lfToday;if(c===1)return dict.lfTomorrow}
+  else if(x.ls==='over')return dict.lfOver;
+  if(x.ls==='d1'||x.ls==='d2'||x.ls==='d3'||x.ls==='late')return dict.lfLeft(n);return '';
+}
+function lfHtml(x,dict,short){
+  if(!x||!x.lf)return '';
+  var c=LF_COL[x.ls]||'',st=lfText(x,dict),day=short?String(x.lf).slice(0,6):x.lf;
+  return '<b'+(c?' style="color:'+c+'"':'')+'>'+(c?'&#9200; ':'')+esc(day)+(st?' &middot; '+esc(st):'')+'</b>';
+}
 function render(d){
   lastData=d;
   var dict=t();
@@ -305,9 +320,11 @@ function render(d){
     if(m.done!=null&&m.total!=null)kv.push('<span>'+dict.kvPieces+' <b>'+num(m.done)+' / '+num(m.total)+'</b></span>');
     if(m.secPerPart)kv.push('<span>'+dict.kvSecPerPart+' <b>'+m.secPerPart+'</b></span>');
     if(m.etaText)kv.push('<span>'+dict.kvEta+' <b>'+esc(m.etaText)+'</b></span>');
+    if(m.lf)kv.push('<span>'+dict.kvLiefer+' '+lfHtml(m,dict,false)+'</span>');
+    if(m.lg)kv.push('<span>&#128230; '+dict.kvLager+' <b style="color:#fbbf24;font-size:1.1em">'+esc(m.lg)+'</b></span>');
     if(m.lastPieceText)kv.push('<span>'+dict.kvLastPiece+' <b>'+esc(m.lastPieceText)+'</b></span>');
     if(m.counter!=null)kv.push('<span>'+dict.kvCounter+' <b>'+num(m.counter)+'</b></span>');
-    var nx=(m.next||[]).map(function(n){return esc(n.program)+(n.ip?' / '+esc(n.ip):'')+(n.qty?' ('+n.qty+' '+dict.qtySuffix+')':'')}).join(' &rarr; ');
+    var nx=(m.next||[]).map(function(n){return esc(n.program)+(n.ip?' / '+esc(n.ip):'')+(n.qty?' ('+n.qty+' '+dict.qtySuffix+')':'')+(n.lf&&LF_COL[n.ls]?' '+lfHtml(n,dict,true):'')+(n.lg?' <span style="color:#fbbf24">&#128230; '+esc(n.lg)+'</span>':'')}).join(' &rarr; ');
     var cardCls=(m.img||m.tools||m.props)?'card hasimg':'card';
     var cardAttr=(m.img||m.tools||m.props)?' data-mach="'+esc(m.machine)+'" title="'+esc(dict.imgHint)+'"':'';
     return '<div class="'+cardCls+'"'+cardAttr+'>'
