@@ -110,6 +110,9 @@ select{appearance:none;border:1px solid var(--line);background:#0b1220;color:var
 .useitem .ubadge{flex:0 0 auto;padding:4px 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap;background:rgba(51,65,85,.6);color:var(--txt)}
 .useitem .ubadge.on{background:rgba(22,163,74,.22);color:#4ade80}
 .useitem .umeta{margin-top:5px;color:var(--dim);font-size:11px}
+.useitem .usrc{display:inline-block;margin-right:6px;padding:1px 6px;border-radius:5px;font-size:10px;font-weight:700}
+.useitem .usrc.sb{background:rgba(22,163,74,.2);color:#4ade80}
+.useitem .usrc.gh{background:rgba(148,163,184,.2);color:#cbd5e1}
 .useitem .uviews{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
 .useitem .uviews span{padding:3px 7px;border-radius:6px;background:#0b1220;border:1px solid var(--line);color:var(--txt);font-size:11px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .useitem .uviews span:first-child{border-color:#3b82f6}
@@ -1154,27 +1157,26 @@ function renderVisits(rows){
     return '<div class="useitem"><div class="uhead">'
       +'<input data-id="'+esc(r.id)+'" placeholder="'+esc(d.useName)+'" value="'+esc(nm)+'">'
       +'<span class="ubadge'+(online?' on':'')+'">'+esc(online?d.useOnline:d.useLast+' '+relTxt)+'</span></div>'
-      +'<div class="umeta">'+(r.email?esc(r.email):'token …'+esc(r.tail||'????'))+(r.ver?'  ·  v'+esc(r.ver):'')+'  ·  '+esc(d.useViews.replace(/:$/,''))+'</div>'
+      +'<div class="umeta">'+(r.src==='sb'?'<span class="usrc sb">Supabase</span>':'<span class="usrc gh">Token</span>')+(r.email?esc(r.email):'token …'+esc(r.tail||'????'))+(r.ver?'  ·  v'+esc(r.ver):'')+'  ·  '+esc(d.useViews.replace(/:$/,''))+'</div>'
       +'<div class="uviews">'+(views.length?views.map(function(x){return '<span>'+esc(x)+'</span>'}).join(''):'<span>-</span>')+'</div></div>';
   }).join('');
   Array.prototype.forEach.call(useListEl.querySelectorAll('input[data-id]'),function(inp){
     inp.addEventListener('change',function(){saveVName(inp.getAttribute('data-id'),String(inp.value||'').trim())});
   });
 }
-function loadVisits(){
-  if(sbOn()){
-    Promise.all([sbJson('/rest/v1/koristenje?select=*'),sbJson('/rest/v1/uloge?select=user_id,ime,uloga').catch(function(){return []})]).then(function(res){
-      var ul={};(res[1]||[]).forEach(function(u){ul[u.user_id]=u});
-      var rows=(res[0]||[]).map(function(k){
-        var u=ul[k.user_id]||{};
-        return {id:k.user_id,sbName:u.ime||String(k.email||'').split('@')[0],email:k.email||'',last:k.zadnji,views:Array.isArray(k.sesije)?k.sesije:[],ver:k.ver,page:k.stranica};
-      }).sort(function(a,b){return (Date.parse(b.last||'')||0)-(Date.parse(a.last||'')||0)});
-      setUseState('');renderVisits(rows);
-    }).catch(function(){setUseState(t().useLoadFail,'bad')});
-    return;
-  }
-  if(!token()||!slug(cfg.repo)){useListEl.innerHTML='';return}
-  ghGet('cache').then(function(r){
+// Supabase prijave (tablica koristenje) i stari pristup GitHub tokenom (cache/*.json) zajedno;
+// svaki izvor zasebno, pa jedan neuspjeh ne skriva drugi.
+function loadSbVisits(){
+  return Promise.all([sbJson('/rest/v1/koristenje?select=*'),sbJson('/rest/v1/uloge?select=user_id,ime,uloga').catch(function(){return []})]).then(function(res){
+    var ul={};(res[1]||[]).forEach(function(u){ul[u.user_id]=u});
+    return (res[0]||[]).map(function(k){
+      var u=ul[k.user_id]||{};
+      return {id:k.user_id,src:'sb',sbName:u.ime||String(k.email||'').split('@')[0],email:k.email||'',last:k.zadnji,views:Array.isArray(k.sesije)?k.sesije:[],ver:k.ver,page:k.stranica};
+    });
+  });
+}
+function loadGhVisits(){
+  return ghGet('cache').then(function(r){
     if(r.status===404)return [];
     if(!r.ok)throw new Error(t().errHttp(r.status));
     return r.json();
@@ -1187,10 +1189,22 @@ function loadVisits(){
       }).catch(function(){return null});
     }));
   }).then(function(recs){
-    var rows=(recs||[]).filter(function(x){return x&&x.id}).sort(function(a,b){return (Date.parse(b.last||'')||0)-(Date.parse(a.last||'')||0)});
-    setUseState('');
+    return (recs||[]).filter(function(x){return x&&x.id}).map(function(x){x.src='gh';return x});
+  });
+}
+function loadVisits(){
+  var jobs=[];
+  if(sbOn())jobs.push(loadSbVisits());
+  if(token()&&slug(cfg.repo))jobs.push(loadGhVisits());
+  if(!jobs.length){useListEl.innerHTML='';return}
+  Promise.all(jobs.map(function(p){return p.then(function(r){return {ok:true,rows:r}},function(){return {ok:false,rows:[]}})})).then(function(res){
+    var rows=[],fail=false;
+    res.forEach(function(x){if(!x.ok)fail=true;rows=rows.concat(x.rows)});
+    rows.sort(function(a,b){return (Date.parse(b.last||'')||0)-(Date.parse(a.last||'')||0)});
+    if(fail&&!rows.length){setUseState(t().useLoadFail,'bad');return}
+    setUseState(fail?t().useLoadFail:'',fail?'bad':'');
     renderVisits(rows);
-  }).catch(function(e){setUseState(t().useLoadFail,'bad');});
+  });
 }
 function setUseState(txt,cls){useStateEl.textContent=txt||'';useStateEl.className='anastate'+(cls?' '+cls:'')}
 // --- Korisnici: samo za admina; racune pravi funkcija korisnici na Supabaseu (tajni kljuc je tamo, ne ovdje).
